@@ -8,12 +8,16 @@
   ],
   "main": "index.js",
   "scripts": {
-    "build": "babel src -d lib --source-maps --extensions \".ts\"",
+    "build": "babel src -d public --source-maps --extensions \".ts\"",
     "coverage": "jest --collect-coverage",
     "jest": "jest",
     "lint": "eslint src/ test/ --ext .ts",
+    "postversion": "git push && git push --tags && npm publish",
     "prettier": "prettier --write \"{src,test,__mocks__}/**/*.ts\"",
-    "test": "npm run build && npm run lint && npm run jest"
+    "preversion": "npm test",
+    "start": "solid-app-kit public/",
+    "test": "npm run build && npm run lint && npm run jest",
+    "version": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -48,6 +52,7 @@
     }
   },
   "dependencies": {
-    "snap-checker": "^1.0.0"
+    "snap-checker": "^1.1.0",
+    "solid-app-kit": "^0.2.2"
   }
 }
