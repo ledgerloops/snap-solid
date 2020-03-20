@@ -1,5 +1,4 @@
 node_modules
 lib
 coverage
-public/*.js
-public/*.js.map
+public/webpack.bundle.js
