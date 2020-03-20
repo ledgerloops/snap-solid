@@ -19,5 +19,8 @@ module.exports = {
   output: {
     filename: "webpack.bundle.js",
     path: path.resolve(__dirname, "public")
+  },
+  resolve: {
+    extensions: [".ts", ".js", ".json"]
   }
 };

@@ -1,6 +1,6 @@
 // import { SnapChecker } from "snap-checker";
 
-import { getDocument } from "./documentCache.ts";
+import { getDocument } from "./documentCache";
 
 async function checkInbox(webId: string): Promise<void> {
   const profileDoc = await getDocument(webId);
