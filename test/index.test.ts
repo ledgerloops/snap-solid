@@ -1,7 +1,5 @@
-import { HelloWorld } from "../src/index";
-
-describe("HelloWorld", () => {
-  it("returns hello world", () => {
-    expect(HelloWorld()).toEqual("hello, world");
+describe("jest", () => {
+  it("runs a trivial test", () => {
+    expect(true).toBeTruthy();
   });
 });

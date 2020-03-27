@@ -15,7 +15,7 @@
     "postversion": "git push && git push --tags && npm publish",
     "prettier": "prettier --write \"{src,test,__mocks__}/**/*.ts\"",
     "preversion": "npm test",
-    "start": "solid-app-kit public/",
+    "start": "DEBUG=* solid-app-kit public/",
     "test": "npm run build && npm run lint && npm run jest",
     "version": "npm run build"
   },
@@ -45,6 +45,7 @@
     "jest": "^25.1.0",
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1",
+    "solid-app-kit": "^1.0.4",
     "source-map-loader": "^0.2.4",
     "typescript": "^3.8.3",
     "webpack": "^4.42.0",
@@ -57,7 +58,6 @@
   },
   "dependencies": {
     "snap-checker": "^1.1.0",
-    "solid-app-kit": "^0.2.2",
     "tripledoc": "^4.3.0"
   }
 }
