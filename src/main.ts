@@ -25,6 +25,7 @@ window.onload = (): void => {
     } else {
       console.log(`Logged in as ${session.webId}`);
       checkInbox(session.webId);
+      (window as any).getDocument = getDocument;
       document.getElementById(
         "loginBanner"
       ).innerHTML = `Logged in as ${session.webId} <button onclick="solid.auth.logout()">Log out</button>`;
