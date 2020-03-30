@@ -24,6 +24,27 @@ window.onload = (): void => {
       document.getElementById("ui").style.display = "none";
     } else {
       console.log(`Logged in as ${session.webId}`);
+      let contacts;
+      if (
+        session.webId === "https://lolcathost.de/storage/alice/profile/card#me"
+      ) {
+        contacts = {
+          "https://lolcathost.de/storage/bob/profile/card#me": {
+            ourSentBox: "https://lolcathost.de/storage/alice/sent/bob/",
+            theirInbox: "https://lolcathost.de/storage/bob/inbox/"
+          }
+        };
+      }
+      if (
+        session.webId === "https://lolcathost.de/storage/bob/profile/card#me"
+      ) {
+        contacts = {
+          "https://lolcathost.de/storage/alice/profile/card#me": {
+            ourSentBox: "https://lolcathost.de/storage/bob/sent/alice/",
+            theirInbox: "https://lolcathost.de/storage/alice/inbox/"
+          }
+        };
+      }
       checkInbox(session.webId);
       (window as any).getDocument = getDocument;
       document.getElementById(
