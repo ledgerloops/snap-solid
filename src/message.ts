@@ -1,5 +1,10 @@
 import { StateTransition, SnapTransactionState } from "snap-checker";
 import { getDocument } from "./documentCache";
+import {
+  createDocumentInContainer,
+  LocalTripleDocumentForContainer,
+  TripleSubject
+} from "tripledoc";
 
 const prefix = "https://legerloops.com/snap/#";
 const ns = {
@@ -61,8 +66,10 @@ export async function snapMessageToWeb(
   msg: StateTransition,
   uri: string
 ): Promise<void> {
-  const doc = await getDocument(uri);
-  const sub = doc.getSubject(uri);
+  const doc: LocalTripleDocumentForContainer = await createDocumentInContainer(
+    uri
+  );
+  const sub: TripleSubject = doc.addSubject(uri);
   sub.addInteger(ns.snap("transId"), msg.transId);
   sub.addRef(ns.snap("newState"), transactionStateToUri(msg.newState));
   sub.addInteger(ns.snap("amount"), msg.amount);
