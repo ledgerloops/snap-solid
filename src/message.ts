@@ -4,7 +4,7 @@ import {
   checkStateTransitionIsValid
 } from "snap-checker";
 import { getDocument } from "./documentCache";
-import { createDocumentInContainer } from "tripledoc";
+import { createDocumentInContainer, TripleSubject } from "tripledoc";
 
 const prefix = "https://legerloops.com/snap/#";
 const ns = {
@@ -68,20 +68,20 @@ export async function snapMessageToWeb(
 ): Promise<void> {
   checkStateTransitionIsValid(msg);
   const doc = createDocumentInContainer(uri);
-  // const sub: TripleSubject = doc.addSubject({});
-  // sub.addInteger(ns.snap("transId"), msg.transId);
-  // sub.addRef(ns.snap("newState"), transactionStateToUri(msg.newState));
-  // if (msg.amount) {
-  //   sub.addInteger(ns.snap("amount"), msg.amount);
-  // }
-  // if (msg.condition) {
-  //   sub.addString(ns.snap("condition"), msg.condition);
-  // }
-  // if (msg.preimage) {
-  //   sub.addString(ns.snap("preimage"), msg.preimage);
-  // }
-  // if (msg.expiresAt) {
-  //   sub.addDateTime(ns.snap("expiresAt"), msg.expiresAt);
-  // }
+  const sub: TripleSubject = doc.addSubject({});
+  sub.addInteger(ns.snap("transId"), msg.transId);
+  sub.addRef(ns.snap("newState"), transactionStateToUri(msg.newState));
+  if (msg.amount) {
+    sub.addInteger(ns.snap("amount"), msg.amount);
+  }
+  if (msg.condition) {
+    sub.addString(ns.snap("condition"), msg.condition);
+  }
+  if (msg.preimage) {
+    sub.addString(ns.snap("preimage"), msg.preimage);
+  }
+  if (msg.expiresAt) {
+    sub.addDateTime(ns.snap("expiresAt"), msg.expiresAt);
+  }
   return void doc.save();
 }

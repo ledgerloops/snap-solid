@@ -30,8 +30,9 @@ window.onload = (): void => {
       ) {
         contacts = {
           "https://lolcathost.de/storage/bob/profile/card#me": {
-            ourSentBox: "https://lolcathost.de/storage/alice/sent/bob/",
-            theirInbox: "https://lolcathost.de/storage/bob/inbox/"
+            ourSentBox: "https://lolcathost.de/storage/alice/snap/out/bob/",
+            ourInbox: "https://lolcathost.de/storage/alice/snap/in/bob/",
+            theirInbox: "https://lolcathost.de/storage/bob/snap/in/alice/"
           }
         };
       }
@@ -40,8 +41,9 @@ window.onload = (): void => {
       ) {
         contacts = {
           "https://lolcathost.de/storage/alice/profile/card#me": {
-            ourSentBox: "https://lolcathost.de/storage/bob/sent/alice/",
-            theirInbox: "https://lolcathost.de/storage/alice/inbox/"
+            ourSentBox: "https://lolcathost.de/storage/bob/snap/out/alice/",
+            ourInbox: "https://lolcathost.de/storage/bob/snap/in/alice/",
+            theirInbox: "https://lolcathost.de/storage/alice/snap/in/bob/"
           }
         };
       }
