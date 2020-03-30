@@ -58,7 +58,7 @@
     }
   },
   "dependencies": {
-    "snap-checker": "^1.4.1",
+    "snap-checker": "^1.5.1",
     "tripledoc": "^4.3.0"
   }
 }

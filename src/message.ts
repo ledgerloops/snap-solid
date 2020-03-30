@@ -1,4 +1,8 @@
-import { StateTransition, SnapTransactionState } from "snap-checker";
+import {
+  StateTransition,
+  SnapTransactionState,
+  checkStateTransitionIsValid
+} from "snap-checker";
 import { getDocument } from "./documentCache";
 import {
   createDocumentInContainer,
@@ -66,15 +70,24 @@ export async function snapMessageToWeb(
   msg: StateTransition,
   uri: string
 ): Promise<void> {
+  checkStateTransitionIsValid(msg);
   const doc: LocalTripleDocumentForContainer = await createDocumentInContainer(
     uri
   );
   const sub: TripleSubject = doc.addSubject(uri);
   sub.addInteger(ns.snap("transId"), msg.transId);
   sub.addRef(ns.snap("newState"), transactionStateToUri(msg.newState));
-  sub.addInteger(ns.snap("amount"), msg.amount);
-  sub.addString(ns.snap("condition"), msg.condition);
-  sub.addString(ns.snap("preimage"), msg.preimage);
-  sub.addDateTime(ns.snap("expiresAt"), msg.expiresAt);
+  if (msg.amount) {
+    sub.addInteger(ns.snap("amount"), msg.amount);
+  }
+  if (msg.condition) {
+    sub.addString(ns.snap("condition"), msg.condition);
+  }
+  if (msg.preimage) {
+    sub.addString(ns.snap("preimage"), msg.preimage);
+  }
+  if (msg.expiresAt) {
+    sub.addDateTime(ns.snap("expiresAt"), msg.expiresAt);
+  }
   return void doc.save();
 }
