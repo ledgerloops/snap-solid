@@ -58,7 +58,8 @@
     }
   },
   "dependencies": {
-    "snap-checker": "^1.5.1",
-    "tripledoc": "^4.3.0-44-property-addsubject-does-not-exist-on-type-localtripledocume-491226669-678c27af"
+    "plandoc": "^1.0.0",
+    "rdf-namespaces": "^1.8.0",
+    "snap-checker": "^1.5.1"
   }
 }

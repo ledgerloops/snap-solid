@@ -1,5 +1,6 @@
 import { StateTransition } from "snap-checker";
 import { snapMessageToWeb } from "./message";
+import { createDocumentInContainer } from "tripledoc";
 
 export type Contact = {
   theirInboxUrl: string;
@@ -11,6 +12,8 @@ export async function sendMessage(
   msg: StateTransition,
   contact: Contact
 ): Promise<void> {
-  await snapMessageToWeb(msg, contact.ourSentboxUrl);
-  await snapMessageToWeb(msg, contact.theirInboxUrl);
+  const theirInboxItem = createDocumentInContainer(contact.theirInboxUrl);
+  await snapMessageToWeb(msg, theirInboxItem);
+  const ourOutboxItem = createDocumentInContainer(contact.theirInboxUrl);
+  await snapMessageToWeb(msg, ourOutboxItem);
 }

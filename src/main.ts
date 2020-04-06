@@ -1,10 +1,37 @@
-// import { SnapChecker } from "snap-checker";
-
-import { getDocument } from "./documentCache";
 import { Contact, sendMessage } from "./sendMessage";
 import { SnapTransactionState } from "snap-checker";
+import {
+  VirtualSubject,
+  describeSubject,
+  VirtualContainer,
+  describeContainer
+} from "plandoc";
+import { internal_fetchContainer } from "plandoc/dist/actors/container";
+import { vcard } from "rdf-namespaces";
 
+// copied from
+// https://github.com/inrupt/friend-requests-exploration/blob/master/src/services/usePersonDetails.ts
+const as = {
+  following: "https://www.w3.org/TR/activitypub/#following"
+};
+const snap = {
+  ourInbox: "https://ledgerloops.com/snap/#our-in",
+  ourOutbox: "https://ledgerloops.com/snap/#our-out",
+  theirInbox: "https://ledgerloops.com/snap/#their-in"
+};
+
+// there are two tasks, reading from message containers,
+// and posting to message containers.
+// Then there is the current user's addressbook.
+// Maybe I want to create a Contact class with private variables for all three containers.
+
+async function createMessageContainers(contactWebId: string) {
+  const contactProfile;
+}
 async function loadMessages(contact: Contact): Promise<void> {
+  const virtualContainerbox = describeContainer().isFoundOn(
+    contact.ourSentboxUrl
+  );
   const sentBoxDoc = await getDocument(contact.ourSentboxUrl);
   const inboxDoc = await getDocument(contact.ourInboxUrl);
   console.log(sentBoxDoc.getStatements(), inboxDoc.getStatements());
@@ -31,11 +58,34 @@ window.onload = (): void => {
       if (
         session.webId === "https://lolcathost.de/storage/alice/profile/card#me"
       ) {
+        const profile: VirtualSubject = describeSubject().isFoundAt(
+          session.webId
+        );
+        const friendsGroup: VirtualSubject = describeSubject().isEnsuredOn(
+          profile,
+          as.following
+        );
+        const firstFriend: VirtualSubject = describeSubject().isFoundOn(
+          friendsGroup,
+          vcard.hasMember
+        );
+        const ourOutbox: VirtualContainer = describeContainer().isEnsuredOn(
+          firstFriend,
+          snap.ourOutbox
+        );
+        const ourInbox: VirtualContainer = describeContainer().isEnsuredOn(
+          firstFriend,
+          snap.ourInbox
+        );
+        const theirInbox: VirtualContainer = describeContainer().isEnsuredOn(
+          firstFriend,
+          snap.theirInbox
+        );
         contacts = {
           "https://lolcathost.de/storage/bob/profile/card#me": {
-            ourSentboxUrl: "https://lolcathost.de/storage/alice/snap/out/bob/",
-            ourInboxUrl: "https://lolcathost.de/storage/alice/snap/in/bob/",
-            theirInboxUrl: "https://lolcathost.de/storage/bob/snap/in/alice/"
+            ourOutbox,
+            ourInbox,
+            theirInbox
           }
         };
       }

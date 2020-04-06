@@ -3,8 +3,7 @@ import {
   SnapTransactionState,
   checkStateTransitionIsValid
 } from "snap-checker";
-import { getDocument } from "./documentCache";
-import { createDocumentInContainer, TripleSubject } from "tripledoc";
+import { LocalTripleDocumentForContainer, TripleDocument } from "tripledoc";
 
 const prefix = "https://legerloops.com/snap/#";
 const ns = {
@@ -48,10 +47,9 @@ function transactionStateToUri(state: SnapTransactionState): string {
 }
 
 export async function snapMessageFromWeb(
-  uri: string
+  doc: TripleDocument
 ): Promise<StateTransition> {
-  const doc = await getDocument(uri);
-  const sub = doc.getSubject(uri);
+  const sub = doc.getSubject("#this");
   return {
     transId: sub.getInteger(ns.snap("transId")),
     newState: uriToTransactionState(sub.getRef(ns.snap("newState"))),
@@ -64,11 +62,12 @@ export async function snapMessageFromWeb(
 
 export async function snapMessageToWeb(
   msg: StateTransition,
-  uri: string
+  doc: LocalTripleDocumentForContainer
 ): Promise<void> {
   checkStateTransitionIsValid(msg);
-  const doc = createDocumentInContainer(uri);
-  const sub: TripleSubject = doc.addSubject({});
+  const sub = doc.addSubject({
+    identifier: "#this"
+  });
   sub.addInteger(ns.snap("transId"), msg.transId);
   sub.addRef(ns.snap("newState"), transactionStateToUri(msg.newState));
   if (msg.amount) {
