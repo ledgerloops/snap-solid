@@ -2,14 +2,15 @@ import { StateTransition } from "snap-checker";
 import { snapMessageToWeb } from "./message";
 
 export type Contact = {
-  inboxUrl: string;
-  sentboxUrl: string;
+  theirInboxUrl: string;
+  ourInboxUrl: string;
+  ourSentboxUrl: string;
 };
 
 export async function sendMessage(
   msg: StateTransition,
   contact: Contact
 ): Promise<void> {
-  await snapMessageToWeb(msg, contact.sentboxUrl);
-  await snapMessageToWeb(msg, contact.inboxUrl);
+  await snapMessageToWeb(msg, contact.ourSentboxUrl);
+  await snapMessageToWeb(msg, contact.theirInboxUrl);
 }
