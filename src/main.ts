@@ -2,9 +2,13 @@
 
 import { getDocument } from "./documentCache";
 
-async function checkInbox(webId: string): Promise<void> {
-  const profileDoc = await getDocument(webId);
-  console.log(profileDoc);
+async function loadMessages(
+  ourSentbox: string,
+  ourInbox: string
+): Promise<void> {
+  const sentBoxDoc = await getDocument(ourSentbox);
+  const inboxDoc = await getDocument(ourInbox);
+  console.log(sentBoxDoc.getStatements(), inboxDoc.getStatements());
 }
 
 window.onload = (): void => {
@@ -30,7 +34,7 @@ window.onload = (): void => {
       ) {
         contacts = {
           "https://lolcathost.de/storage/bob/profile/card#me": {
-            ourSentBox: "https://lolcathost.de/storage/alice/snap/out/bob/",
+            ourSentbox: "https://lolcathost.de/storage/alice/snap/out/bob/",
             ourInbox: "https://lolcathost.de/storage/alice/snap/in/bob/",
             theirInbox: "https://lolcathost.de/storage/bob/snap/in/alice/"
           }
@@ -41,13 +45,16 @@ window.onload = (): void => {
       ) {
         contacts = {
           "https://lolcathost.de/storage/alice/profile/card#me": {
-            ourSentBox: "https://lolcathost.de/storage/bob/snap/out/alice/",
+            ourSentbox: "https://lolcathost.de/storage/bob/snap/out/alice/",
             ourInbox: "https://lolcathost.de/storage/bob/snap/in/alice/",
             theirInbox: "https://lolcathost.de/storage/alice/snap/in/bob/"
           }
         };
       }
-      checkInbox(session.webId);
+      Object.keys(contacts).forEach((contact: string) => {
+        console.log("Loading bilateral message history", contact);
+        loadMessages(contacts[contact].ourSentbox, contacts[contact].ourInbox);
+      });
       (window as any).getDocument = getDocument;
       document.getElementById(
         "loginBanner"
