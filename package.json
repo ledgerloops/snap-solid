@@ -1,12 +1,12 @@
 {
   "name": "boilerplate",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Basic build environment for reference",
   "files": [
     "src",
     "lib"
   ],
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "build": "webpack",
     "coverage": "jest --collect-coverage",
@@ -15,7 +15,7 @@
     "postversion": "git push && git push --tags && npm publish",
     "prettier": "prettier --write \"{src,test,__mocks__}/**/*.ts\"",
     "preversion": "npm test",
-    "start": "DEBUG=* solid-app-kit public/",
+    "start": "NODE_EXTRA_CA_CERTS=myCA.pem DEBUG=* node ./node_modules/solid-app-kit/lib/cli public/",
     "test": "npm run build && npm run lint && npm run jest",
     "version": "npm run build"
   },
@@ -37,6 +37,7 @@
     "@types/jest": "^25.1.3",
     "@typescript-eslint/eslint-plugin": "^2.22.0",
     "@typescript-eslint/parser": "^2.22.0",
+    "babel-jest": "^25.2.4",
     "babel-loader": "^8.0.6",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.0",
@@ -45,7 +46,7 @@
     "jest": "^25.1.0",
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1",
-    "solid-app-kit": "^1.0.4",
+    "solid-app-kit": "^1.1.0",
     "source-map-loader": "^0.2.4",
     "typescript": "^3.8.3",
     "webpack": "^4.42.0",
@@ -57,7 +58,7 @@
     }
   },
   "dependencies": {
-    "snap-checker": "^1.1.0",
-    "tripledoc": "^4.3.0"
+    "snap-checker": "^1.5.1",
+    "tripledoc": "^4.3.0-44-property-addsubject-does-not-exist-on-type-localtripledocume-491226669-678c27af"
   }
 }
