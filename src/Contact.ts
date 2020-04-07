@@ -141,6 +141,13 @@ export class Contact {
   }
 }
 
+export async function ensureContact(
+  sessionWebId: string,
+  contactWebId: string
+): Promise<void> {
+  //
+}
+
 export async function fetchContacts(
   sessionWebId: string
 ): Promise<{ [webId: string]: Contact }> {

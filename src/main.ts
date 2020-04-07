@@ -1,5 +1,5 @@
 import { SnapTransactionState } from "snap-checker";
-import { fetchContacts, Contact } from "./Contact";
+import { fetchContacts, Contact, ensureContact } from "./Contact";
 
 window.onload = (): void => {
   console.log("document ready");
@@ -18,11 +18,28 @@ window.onload = (): void => {
       document.getElementById("ui").style.display = "none";
     } else {
       console.log(`Logged in as ${session.webId}`);
-      const contacts: { [webId: string]: Contact } = await fetchContacts(
-        session.webId
-      );
+
       // (window as any).getDocument = getDocument;
+      (window as any).addSomeone = async (): Promise<void> => {
+        if (
+          session.webId ===
+          "https://lolcathost.de/storage/alice/profile/card#me"
+        ) {
+          await ensureContact(
+            session.webId,
+            "https://lolcathost.de/storage/alice/profile/card#me"
+          );
+        } else {
+          await ensureContact(
+            session.webId,
+            "https://lolcathost.de/storage/alice/profile/card#me"
+          );
+        }
+      };
       (window as any).sendSomething = async (): Promise<void> => {
+        const contacts: { [webId: string]: Contact } = await fetchContacts(
+          session.webId
+        );
         await Promise.all(
           Object.keys(contacts).map(async (webId: string) => {
             const contact = contacts[webId];
