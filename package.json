@@ -58,8 +58,9 @@
     }
   },
   "dependencies": {
-    "plandoc": "^1.0.0",
+    "plandoc": "^1.0.1",
     "rdf-namespaces": "^1.8.0",
-    "snap-checker": "^1.5.1"
+    "snap-checker": "^1.5.1",
+    "tripledoc": "^4.3.1"
   }
 }
