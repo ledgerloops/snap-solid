@@ -11,7 +11,7 @@ import {
   describeContainer
 } from "plandoc";
 import { StateTransition, SnapChecker } from "snap-checker";
-// import { internal_fetchContainer } from "plandoc/dist/actors/container";
+import { internal_fetchContainer } from "plandoc/dist/actors/container";
 import { snapMessageToWeb, snapMessageFromWeb } from "./message";
 import { ldp } from "rdf-namespaces";
 
@@ -50,16 +50,17 @@ export class Contact {
     this.unit = unit;
   }
 
-  async ensureMessageBoxUrl(predicate: string): Promise<TripleDocument> {
-    console.log("Ensuring", predicate);
-    // FIXME: Use https://gitlab.com/vincenttunru/plandoc/-/issues/8#note_318442264 here
-    const box: VirtualDocument = describeDocument().isEnsuredOn(
-      this.addressbookEntry,
-      predicate,
-      this.snapRoot
+  async ensureMessageBoxUrl(predicateTerm: string): Promise<TripleDocument> {
+    console.log("Ensuring", predicateTerm);
+    const container: VirtualContainer = describeContainer().experimental_isContainedIn(
+      this.snapRoot,
+      snap[predicateTerm]
     );
-    console.log("Fetching", box);
-    return fetchDocument(box);
+    const containerUrl: string = await internal_fetchContainer(container);
+    const containerDoc: VirtualDocument = describeDocument().isFoundAt(
+      containerUrl
+    );
+    return fetchDocument(containerDoc);
   }
 
   async sendMessageTo(
@@ -75,8 +76,8 @@ export class Contact {
   }
 
   async sendMessage(msg: StateTransition): Promise<void> {
-    this.sendMessageTo(msg, snap.ourOutbox);
-    this.sendMessageTo(msg, snap.theirInbox);
+    this.sendMessageTo(msg, "ourOutbox");
+    this.sendMessageTo(msg, "theirInbox");
   }
 
   async fetchMessagesFrom(
