@@ -8,10 +8,11 @@ import {
   describeDocument,
   VirtualDocument,
   describeSubject,
-  describeContainer
+  describeContainer,
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  internal_fetchContainer
 } from "plandoc";
 import { StateTransition, SnapChecker } from "snap-checker";
-import { internal_fetchContainer } from "plandoc/dist/actors/container";
 import { snapMessageToWeb, snapMessageFromWeb } from "./message";
 import { ldp } from "rdf-namespaces";
 

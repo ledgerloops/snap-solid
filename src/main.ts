@@ -1,5 +1,6 @@
 import { SnapTransactionState } from "snap-checker";
 import { fetchContacts, Contact, ensureContact } from "./Contact";
+import { test } from "./test";
 
 window.onload = (): void => {
   console.log("document ready");
@@ -20,6 +21,9 @@ window.onload = (): void => {
       console.log(`Logged in as ${session.webId}`);
 
       // (window as any).getDocument = getDocument;
+
+      ((window as unknown) as any).test = test;
+
       (window as any).addSomeone = async (): Promise<void> => {
         if (
           session.webId ===

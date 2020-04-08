@@ -58,7 +58,7 @@
     }
   },
   "dependencies": {
-    "plandoc": "^1.0.1",
+    "plandoc": "github:michielbdejong/plandoc#fetchContainer",
     "rdf-namespaces": "^1.8.0",
     "snap-checker": "^1.5.1",
     "tripledoc": "^4.3.2"
