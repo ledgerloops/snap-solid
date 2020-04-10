@@ -13,6 +13,11 @@ export const as = {
   following: "https://www.w3.org/TR/activitypub/#following"
 };
 
+export const contacts = {
+  webId: "https://ledgerloops.com/contacts/#webId",
+  nick: "https://ledgerloops.com/contacts/#nick"
+};
+
 const snap = {
   ourInbox: "https://ledgerloops.com/snap/#our-in",
   ourOutbox: "https://ledgerloops.com/snap/#our-out",
@@ -142,8 +147,19 @@ class PodData {
     return addressBookSub.getAllRefs(vcard.hasMember);
   }
 
-  async getContact(uri: string, nick: string) {
+  async getContact(
+    uri: string
+  ): Promise<{
+    ourInbox: TripleDocument;
+    ourOutbox: TripleDocument;
+    theirInbox: string;
+  }> {
     const contactSub = await this.getSubjectAt(uri);
+    const theirWebId = contactSub.getRef(contacts.webId);
+    const nick = contactSub.getRef(contacts.nick);
+    const theirProfileDoc = await fetchDocumentTripleDoc(theirWebId);
+    const theirInbox = theirProfileDoc.getSubject(theirWebId).getRef(ldp.inbox);
+
     const ourInbox = await this.getDocumentOn(
       contactSub,
       snap.ourInbox,
@@ -154,11 +170,6 @@ class PodData {
       snap.ourOutbox,
       `${this.podRoot}snap/${nick}/our-out/`
     );
-    const theirInbox = await this.getDocumentOn(
-      contactSub,
-      snap.ourInbox,
-      `${this.podRoot}snap/${nick}/their-in/`
-    ); // FIXME: get this on their pod from their profile
     return {
       ourInbox,
       ourOutbox,
