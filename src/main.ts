@@ -1,6 +1,8 @@
 import { SnapTransactionState } from "snap-checker";
-import { fetchContacts, Contact, ensureContact } from "./Contact";
+import { fetchContacts, Contact, ensureContact, as } from "./Contact";
 import { test } from "./test";
+import { describeDocument, describeSubject, describeContainer, internal_fetchContainer } from "plandoc";
+import { ldp, space, acl, vcard } from "rdf-namespaces";
 
 window.onload = (): void => {
   console.log("document ready");
@@ -23,6 +25,16 @@ window.onload = (): void => {
       // (window as any).getDocument = getDocument;
 
       ((window as unknown) as any).test = test;
+      ((window as unknown) as any).describeDocument = describeDocument;
+      ((window as unknown) as any).describeSubject = describeSubject;
+      ((window as unknown) as any).describeContainer = describeContainer;
+      // eslint-disable-next-line @typescript-eslint/camelcase
+      ((window as unknown) as any).internal_fetchContainer = internal_fetchContainer;
+      ((window as unknown) as any).ldp = ldp;
+      ((window as unknown) as any).space = space;
+      ((window as unknown) as any).acl = acl;
+      ((window as unknown) as any).vcard = vcard;
+      ((window as unknown) as any).as = as;
 
       (window as any).addSomeone = async (): Promise<void> => {
         if (

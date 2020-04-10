@@ -18,7 +18,7 @@ import { ldp } from "rdf-namespaces";
 
 // copied from
 // https://github.com/inrupt/friend-requests-exploration/blob/master/src/services/usePersonDetails.ts
-const as = {
+export const as = {
   following: "https://www.w3.org/TR/activitypub/#following"
 };
 
