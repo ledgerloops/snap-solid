@@ -6,6 +6,7 @@ import {
   LocalTripleDocumentWithRef
 } from "tripledoc";
 import { acl, ldp, rdf, space, schema, vcard } from "rdf-namespaces";
+import uuid from "uuid/v4";
 
 // copied from
 // https://github.com/inrupt/friend-requests-exploration/blob/master/src/services/usePersonDetails.ts
@@ -49,7 +50,12 @@ export class PodData {
     url: string,
     initIfMissing?: (newDoc: LocalTripleDocumentWithRef) => Promise<void>
   ): Promise<TripleDocument> {
-    const fetched: TripleDocument | null = await fetchDocumentTripleDoc(url);
+    let fetched: TripleDocument | null = null;
+    try {
+      fetched = await fetchDocumentTripleDoc(url);
+    } catch (e) {
+      // e.g. 404 etc.
+    }
     if (fetched === null) {
       const newDoc = await this.createDocumentOrContainer(url);
       if (initIfMissing) {
@@ -136,14 +142,25 @@ export class PodData {
   /**
    * This will fetch or create the addressbook
    */
-  async getContacts(): Promise<string[]> {
+  async getAddressBookSub(): Promise<TripleSubject> {
     const profileSub = await this.getProfileSub();
-    const addressBookSub = await this.getSubjectOn(
+    return this.getSubjectOn(
       profileSub,
       as.following,
       this.podRoot + "contacts.ttl#friends"
     );
+  }
+  async getContacts(): Promise<string[]> {
+    const addressBookSub = await this.getAddressBookSub();
     return addressBookSub.getAllRefs(vcard.hasMember);
+  }
+
+  async generateContactSubUri(): Promise<string> {
+    const addressBookSub = await this.getAddressBookSub();
+    const ref: string = addressBookSub.asRef();
+    const fragment = `#${uuid()}`;
+    console.log({ fragment, ref });
+    return new URL(fragment, ref).toString();
   }
 
   async getContact(
@@ -169,6 +186,39 @@ export class PodData {
       snap.ourOutbox,
       `${this.podRoot}snap/${nick}/our-out/`
     );
+    return {
+      ourInbox,
+      ourOutbox,
+      theirInbox
+    };
+  }
+
+  async addContact(
+    theirWebId: string,
+    nick: string
+  ): Promise<{
+    ourInbox: TripleDocument;
+    ourOutbox: TripleDocument;
+    theirInbox: string;
+  }> {
+    const uri = await this.generateContactSubUri();
+    const contactSub = await this.getSubjectAt(uri);
+    contactSub.addRef(contacts.webId, theirWebId);
+    contactSub.addString(contacts.nick, nick);
+    const theirProfileDoc = await fetchDocumentTripleDoc(theirWebId);
+    const theirInbox = theirProfileDoc.getSubject(theirWebId).getRef(ldp.inbox);
+
+    const ourInbox = await this.getDocumentOn(
+      contactSub,
+      snap.ourInbox,
+      `${this.podRoot}snap/${nick}/our-in/`
+    );
+    const ourOutbox = await this.getDocumentOn(
+      contactSub,
+      snap.ourOutbox,
+      `${this.podRoot}snap/${nick}/our-out/`
+    );
+    await (contactSub.getDocument() as LocalTripleDocumentWithRef).save();
     return {
       ourInbox,
       ourOutbox,
