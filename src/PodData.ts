@@ -25,9 +25,7 @@ const snap = {
   root: "https://ledgerloops.com/snap/#root"
 };
 
-class Contact {}
-
-class PodData {
+export class PodData {
   sessionWebId: string;
   podRoot: string;
   promises: {
@@ -36,6 +34,7 @@ class PodData {
   constructor(sessionWebId: string, podRoot: string) {
     this.sessionWebId = sessionWebId;
     this.podRoot = podRoot;
+    this.promises = {};
   }
 
   async createDocumentOrContainer(url: string) {

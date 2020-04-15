@@ -1,8 +1,14 @@
 import { SnapTransactionState } from "snap-checker";
 import { fetchContacts, Contact, ensureContact, as } from "./Contact";
 import { test } from "./test";
-import { describeDocument, describeSubject, describeContainer, internal_fetchContainer } from "plandoc";
+import {
+  describeDocument,
+  describeSubject,
+  describeContainer,
+  internal_fetchContainer
+} from "plandoc";
 import { ldp, space, acl, vcard } from "rdf-namespaces";
+import { PodData } from "./PodData";
 
 window.onload = (): void => {
   console.log("document ready");
@@ -24,7 +30,15 @@ window.onload = (): void => {
 
       // (window as any).getDocument = getDocument;
 
+      const podRoot = session.webId.substring(
+        0,
+        session.webId.length - "profile/card#me".length
+      );
       ((window as unknown) as any).test = test;
+      ((window as unknown) as any).podData = new PodData(
+        session.webId,
+        podRoot
+      );
       ((window as unknown) as any).describeDocument = describeDocument;
       ((window as unknown) as any).describeSubject = describeSubject;
       ((window as unknown) as any).describeContainer = describeContainer;
