@@ -221,6 +221,7 @@ export class PodData {
 
   addAuthorization(
     doc: LocalTripleDocumentWithRef,
+    targetDocUrl: string,
     subFragStr: string,
     webId: string,
     preds: string[],
@@ -233,7 +234,7 @@ export class PodData {
     sub.addRef(rdf.type, acl.Authorization);
     sub.addRef(acl.agent, webId);
     preds.forEach((pred: string) => {
-      sub.addRef(pred, doc.asRef());
+      sub.addRef(pred, targetDocUrl);
     });
     modes.forEach((mode: string) => {
       sub.addRef(acl.mode, mode);
@@ -241,11 +242,19 @@ export class PodData {
   }
   addAuthorizations(
     doc: LocalTripleDocumentWithRef,
+    targetDocUrl: string,
     map: { [wedId: string]: string[] },
     preds: string[]
   ): void {
     Object.keys(map).forEach((webId: string) => {
-      this.addAuthorization(doc, uuid(), webId, preds, map[webId]);
+      this.addAuthorization(
+        doc,
+        targetDocUrl,
+        uuid(),
+        webId,
+        preds,
+        map[webId]
+      );
     });
   }
   async ensureAcl(
@@ -253,19 +262,23 @@ export class PodData {
     access: { [wedId: string]: string[] },
     defaults: { [wedId: string]: string[] }
   ): Promise<void> {
+    const targetDocUrl: string = forDoc.asRef();
     const aclDocUrl: string = forDoc.getAclRef();
     await this.getDocumentAt(
       aclDocUrl,
       async (newDoc: LocalTripleDocumentWithRef): Promise<void> => {
         // FIXME: leave out acl.default if ACL is not for a container.
         const ownerPreds = [acl.accessTo, acl.default];
-        this.addAuthorization(newDoc, "owner", this.sessionWebId, ownerPreds, [
-          acl.Read,
-          acl.Write,
-          acl.Control
-        ]);
-        this.addAuthorizations(newDoc, access, [acl.accessTo]);
-        this.addAuthorizations(newDoc, defaults, [acl.default]);
+        this.addAuthorization(
+          newDoc,
+          targetDocUrl,
+          "owner",
+          this.sessionWebId,
+          ownerPreds,
+          [acl.Read, acl.Write, acl.Control]
+        );
+        this.addAuthorizations(newDoc, targetDocUrl, access, [acl.accessTo]);
+        this.addAuthorizations(newDoc, targetDocUrl, defaults, [acl.default]);
       }
     );
   }
