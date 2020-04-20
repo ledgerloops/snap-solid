@@ -142,11 +142,16 @@ export class PodData {
    * This will fetch or create the profile doc
    */
   async getProfileSub(): Promise<TripleSubject> {
+    const webIdParts = this.sessionWebId.split("#");
+    let webIdFragment = "";
+    if (webIdParts.length == 2) {
+      webIdFragment = webIdParts[1];
+    }
     const profileDoc = await this.getDocumentAt(
       this.sessionWebId,
       async (newDoc: LocalTripleDocumentWithRef) => {
         const newProfileSub = newDoc.addSubject({
-          identifier: this.sessionWebId
+          identifier: webIdFragment
         });
         newProfileSub.addRef(rdf.type, schema.Person);
         newProfileSub.addRef(space.storage, this.podRoot);
@@ -215,14 +220,14 @@ export class PodData {
 
   addAuthorization(
     doc: LocalTripleDocumentWithRef,
-    subId: string,
+    subFragStr: string,
     webId: string,
     preds: string[],
     modes: string[]
   ): void {
-    console.log("adding subject", subId);
+    console.log("adding subject", subFragStr);
     const sub = doc.addSubject({
-      identifier: subId
+      identifier: subFragStr
     });
     sub.addRef(rdf.type, acl.Authorization);
     sub.addRef(acl.agent, webId);
@@ -239,8 +244,7 @@ export class PodData {
     preds: string[]
   ): void {
     Object.keys(map).forEach((webId: string) => {
-      const otherSubId = this.generateSubUri(doc.asRef());
-      this.addAuthorization(doc, otherSubId, webId, preds, map[webId]);
+      this.addAuthorization(doc, uuid(), webId, preds, map[webId]);
     });
   }
   async ensureAcl(
@@ -254,7 +258,7 @@ export class PodData {
       async (newDoc: LocalTripleDocumentWithRef): Promise<void> => {
         // FIXME: leave out acl.default if ACL is not for a container.
         const ownerPreds = [acl.accessTo, acl.default];
-        this.addAuthorization(newDoc, "#owner", this.sessionWebId, ownerPreds, [
+        this.addAuthorization(newDoc, "owner", this.sessionWebId, ownerPreds, [
           acl.Read,
           acl.Write,
           acl.Control
@@ -264,6 +268,7 @@ export class PodData {
       }
     );
   }
+
   async addContact(
     theirWebId: string,
     nick: string
@@ -273,6 +278,8 @@ export class PodData {
     theirInbox: string;
   }> {
     const uri = await this.generateContactSubUri();
+    const addressBookSub: TripleSubject = await this.getAddressBookSub();
+    addressBookSub.addRef(vcard.hasMember, uri);
     const contactSub = await this.getSubjectAt(uri);
     contactSub.addRef(contacts.webId, theirWebId);
     contactSub.addString(contacts.nick, nick);
@@ -282,16 +289,27 @@ export class PodData {
     const ourInbox = await this.getDocumentOn(
       contactSub,
       snap.ourInbox,
-      `${this.podRoot}snap/${nick}/our-in/`
+      `${this.podRoot}snap/${encodeURIComponent(nick)}/our-in/`
     );
     await this.ensureAcl(ourInbox, { [theirWebId]: [acl.Append] }, {});
     const ourOutbox = await this.getDocumentOn(
       contactSub,
       snap.ourOutbox,
-      `${this.podRoot}snap/${nick}/our-out/`
+      `${this.podRoot}snap/${encodeURIComponent(nick)}/our-out/`
     );
     await this.ensureAcl(ourOutbox, {}, {});
-    await (contactSub.getDocument() as LocalTripleDocumentWithRef).save();
+    // FIXME: These are in the same doc, and we fetched it only once
+    // so we should also need to save it only once?
+    const docUri = await (addressBookSub.getDocument() as LocalTripleDocumentWithRef).asRef();
+    const docUri2 = await (contactSub.getDocument() as LocalTripleDocumentWithRef).asRef();
+    if (docUri !== docUri2) {
+      console.log({ docUri, docUri2 });
+      throw new Error("something went wrong with the doc URIs!");
+    }
+    const doc = await this.getDocumentAt(docUri);
+    await (doc as LocalTripleDocumentWithRef).save();
+    const doc2 = await this.getDocumentAt(docUri);
+    await (doc2 as LocalTripleDocumentWithRef).save();
     return {
       ourInbox,
       ourOutbox,

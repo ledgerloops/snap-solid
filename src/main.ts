@@ -7,6 +7,7 @@ import {
   describeContainer,
   internal_fetchContainer
 } from "plandoc";
+import { fetchDocument } from "tripledoc";
 import { ldp, space, acl, vcard } from "rdf-namespaces";
 import { PodData } from "./PodData";
 
@@ -39,6 +40,7 @@ window.onload = (): void => {
         session.webId,
         podRoot
       );
+      ((window as unknown) as any).fetchDocument = fetchDocument;
       ((window as unknown) as any).describeDocument = describeDocument;
       ((window as unknown) as any).describeSubject = describeSubject;
       ((window as unknown) as any).describeContainer = describeContainer;
