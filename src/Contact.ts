@@ -1,20 +1,8 @@
-import {
-  VirtualSubject,
-  VirtualContainer,
-  // describeContainer,
-  // Reference,
-  TripleDocument,
-  fetchDocument,
-  describeDocument,
-  VirtualDocument,
-  describeSubject,
-  describeContainer,
-  // eslint-disable-next-line @typescript-eslint/camelcase
-  internal_fetchContainer
-} from "plandoc";
 import { StateTransition, SnapChecker } from "snap-checker";
 import { snapMessageToWeb, snapMessageFromWeb } from "./message";
 import { ldp } from "rdf-namespaces";
+import { TripleDocument } from "tripledoc";
+import { PodData } from "./PodData";
 
 // copied from
 // https://github.com/inrupt/friend-requests-exploration/blob/master/src/services/usePersonDetails.ts
@@ -30,75 +18,55 @@ const snap = {
 };
 
 export class Contact {
-  addressbookEntry: VirtualSubject;
   snapChecker: SnapChecker;
-  snapRoot: VirtualContainer;
+  podData: PodData;
+  ourInbox: TripleDocument;
+  ourOutbox: TripleDocument;
+  theirInbox: TripleDocument;
   ourName: string;
   theirName: string;
   unit: string;
   constructor(
-    addressbookEntry: VirtualSubject,
-    snapRoot: VirtualContainer,
+    ourInbox: TripleDocument,
+    ourOutbox: TripleDocument,
+    theirInbox: TripleDocument,
     ourName: string,
     theirName: string,
-    unit: string
+    unit: string,
+    podData: PodData
   ) {
-    this.addressbookEntry = addressbookEntry;
     this.snapChecker = new SnapChecker([]);
-    this.snapRoot = snapRoot;
     this.ourName = ourName;
     this.theirName = theirName;
     this.unit = unit;
-  }
-
-  async ensureMessageBoxUrl(predicateTerm: string): Promise<TripleDocument> {
-    console.log("Ensuring", predicateTerm);
-    const container: VirtualContainer = describeContainer().experimental_isContainedIn(
-      this.snapRoot,
-      snap[predicateTerm]
-    );
-    const containerUrl: string = await internal_fetchContainer(container);
-    const containerDoc: VirtualDocument = describeDocument().isFoundAt(
-      containerUrl
-    );
-    return fetchDocument(containerDoc);
+    this.podData = podData;
   }
 
   async sendMessageTo(
     msg: StateTransition,
-    messageBoxPredicate: string
+    box: TripleDocument
   ): Promise<void> {
-    // const ourOutbox: TripleContainer = this.ensureMessageBoxUrl(snap.ourOutbox);
-    // const ourOutboxDoc = createDocumentInContainer(ourOutbox);
-    const box: TripleDocument = await this.ensureMessageBoxUrl(
-      messageBoxPredicate
-    );
     await snapMessageToWeb(msg, box);
   }
 
   async sendMessage(msg: StateTransition): Promise<void> {
-    this.sendMessageTo(msg, "ourOutbox");
-    this.sendMessageTo(msg, "theirInbox");
+    this.sendMessageTo(msg, this.ourOutbox);
+    this.sendMessageTo(msg, this.theirInbox);
   }
 
   async fetchMessagesFrom(
-    messageBoxPredicate: string,
+    box: TripleDocument,
     from: string,
     to: string,
     unit: string
   ): Promise<void> {
-    console.log("ensuring", messageBoxPredicate);
-    const box: TripleDocument = await this.ensureMessageBoxUrl(
-      messageBoxPredicate
-    );
     const boxSub = box.getSubject("");
     const docs: string[] = boxSub.getAllRefs(ldp.contains);
-    console.log("fetchMessagesFrom", messageBoxPredicate, from, to, unit);
+    console.log("fetchMessagesFrom", box.asRef(), from, to, unit);
     const promises: Promise<void>[] = docs.map(
       async (msgDocUrl: string): Promise<void> => {
-        const thisVirtualDoc = describeDocument().isFoundAt(msgDocUrl);
         console.log("Fetching", msgDocUrl);
-        const thisDoc = await fetchDocument(thisVirtualDoc);
+        const thisDoc = await this.podData.getDocumentAt(msgDocUrl);
         const snapMessage = await snapMessageFromWeb(thisDoc);
         this.snapChecker.processMessage({
           from,
@@ -115,7 +83,7 @@ export class Contact {
   async fetchSentMessages(): Promise<void> {
     console.log("fetchSentMessages");
     await this.fetchMessagesFrom(
-      snap.ourOutbox,
+      this.ourOutbox,
       this.ourName,
       this.theirName,
       this.unit
@@ -124,7 +92,7 @@ export class Contact {
   async fetchReceivedMessages(): Promise<void> {
     console.log("fetchReceivedMessages");
     await this.fetchMessagesFrom(
-      snap.ourInbox,
+      this.ourInbox,
       this.ourName,
       this.theirName,
       this.unit
@@ -140,41 +108,5 @@ export class Contact {
   }
   async subscribeToReceivedMessage(): Promise<void> {
     //
-  }
-}
-
-export async function ensureContact(
-  sessionWebId: string,
-  contactWebId: string
-): Promise<void> {
-  //
-}
-
-export async function fetchContacts(
-  sessionWebId: string
-): Promise<{ [webId: string]: Contact }> {
-  const addressbookEntry = describeSubject().isFoundAt("");
-  const profileSub = describeSubject().isFoundAt(sessionWebId);
-  const snapRoot = describeContainer().isFoundOn(profileSub, snap.root);
-  if (sessionWebId === "https://lolcathost.de/storage/alice/profile/card#me") {
-    return {
-      "https://lolcathost.de/storage/bob/profile/card#me": new Contact(
-        addressbookEntry,
-        snapRoot,
-        "alice",
-        "bob",
-        "1E-6 USD"
-      )
-    };
-  } else {
-    return {
-      "https://lolcathost.de/storage/alice/profile/card#me": new Contact(
-        addressbookEntry,
-        snapRoot,
-        "bob",
-        "alice",
-        "1E-6 USD"
-      )
-    };
   }
 }

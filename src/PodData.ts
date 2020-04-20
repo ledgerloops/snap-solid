@@ -3,7 +3,8 @@ import {
   TripleSubject,
   createDocument,
   fetchDocument as fetchDocumentTripleDoc,
-  LocalTripleDocumentWithRef
+  LocalTripleDocumentWithRef,
+  fetchDocument
 } from "tripledoc";
 import {
   acl as aclUpstream,
@@ -14,6 +15,7 @@ import {
   vcard
 } from "rdf-namespaces";
 import { v4 as uuid } from "uuid";
+import { Contact } from "./Contact";
 
 const acl = Object.assign(
   {
@@ -189,13 +191,7 @@ export class PodData {
     return this.generateSubUri(ref);
   }
 
-  async getContact(
-    uri: string
-  ): Promise<{
-    ourInbox: TripleDocument;
-    ourOutbox: TripleDocument;
-    theirInbox: string;
-  }> {
+  async getContact(uri: string): Promise<Contact> {
     const contactSub = await this.getSubjectAt(uri);
     const theirWebId = contactSub.getRef(contacts.webId);
     const nick = contactSub.getRef(contacts.nick);
@@ -212,11 +208,14 @@ export class PodData {
       snap.ourOutbox,
       `${this.podRoot}snap/${nick}/our-out/`
     );
-    return {
+    return new Contact(
       ourInbox,
       ourOutbox,
-      theirInbox
-    };
+      await this.getDocumentAt(theirInbox),
+      "me",
+      nick,
+      "10E-6 USD"
+    );
   }
 
   addAuthorization(

@@ -1,12 +1,4 @@
 import { SnapTransactionState } from "snap-checker";
-import { fetchContacts, Contact, ensureContact, as } from "./Contact";
-import { test } from "./test";
-import {
-  describeDocument,
-  describeSubject,
-  describeContainer,
-  internal_fetchContainer
-} from "plandoc";
 import { fetchDocument } from "tripledoc";
 import { ldp, space, acl, vcard } from "rdf-namespaces";
 import { PodData } from "./PodData";
@@ -35,57 +27,33 @@ window.onload = (): void => {
         0,
         session.webId.length - "profile/card#me".length
       );
-      ((window as unknown) as any).test = test;
-      ((window as unknown) as any).podData = new PodData(
-        session.webId,
-        podRoot
-      );
+      
+      const podData = new PodData(session.webId, podRoot);
+      ((window as unknown) as any).podData = podData;
       ((window as unknown) as any).fetchDocument = fetchDocument;
-      ((window as unknown) as any).describeDocument = describeDocument;
-      ((window as unknown) as any).describeSubject = describeSubject;
-      ((window as unknown) as any).describeContainer = describeContainer;
-      // eslint-disable-next-line @typescript-eslint/camelcase
-      ((window as unknown) as any).internal_fetchContainer = internal_fetchContainer;
       ((window as unknown) as any).ldp = ldp;
       ((window as unknown) as any).space = space;
       ((window as unknown) as any).acl = acl;
       ((window as unknown) as any).vcard = vcard;
-      ((window as unknown) as any).as = as;
+      ((window as unknown) as any).as = {
+        following: "https://www.w3.org/TR/activitypub/#following"
+      };
 
-      (window as any).addSomeone = async (): Promise<void> => {
-        if (
-          session.webId ===
-          "https://lolcathost.de/storage/alice/profile/card#me"
-        ) {
-          await ensureContact(
-            session.webId,
-            "https://lolcathost.de/storage/alice/profile/card#me"
-          );
-        } else {
-          await ensureContact(
-            session.webId,
-            "https://lolcathost.de/storage/alice/profile/card#me"
-          );
-        }
-      };
-      (window as any).sendSomething = async (): Promise<void> => {
-        const contacts: { [webId: string]: Contact } = await fetchContacts(
-          session.webId
-        );
-        await Promise.all(
-          Object.keys(contacts).map(async (webId: string) => {
-            const contact = contacts[webId];
-            console.log("Loading bilateral message history", contact);
-            await contact.fetchMessages();
-            // console.log("Sending a message", contact);
-            // return contact.sendMessage({
-            //   transId: 1,
-            //   newState: SnapTransactionState.Proposing,
-            //   amount: 20
-            // });
-          })
-        );
-      };
+      const contactUris = await podData.getContacts();
+      await Promise.all(
+        contactUris.map(async (contactUri: string) => {
+          const contact = await podData.getContact(contactUri);
+          console.log("Loading bilateral message history", contact);
+          await contact.fetchMessages();
+          // console.log("Sending a message", contact);
+          // return contact.sendMessage({
+          //   transId: 1,
+          //   newState: SnapTransactionState.Proposing,
+          //   amount: 20
+          // });
+        })
+      );
+
       document.getElementById(
         "loginBanner"
       ).innerHTML = `Logged in as ${session.webId} <button onclick="solid.auth.logout()">Log out</button>`;
