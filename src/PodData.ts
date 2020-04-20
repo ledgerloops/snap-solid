@@ -85,10 +85,11 @@ export class PodData {
     url: string,
     initIfMissing?: (newDoc: LocalTripleDocumentWithRef) => Promise<void>
   ): Promise<TripleDocument> {
-    if (!this.promises[url]) {
-      this.promises[url] = this.fetchOrCreate(url, initIfMissing);
+    const urlNoFrag = url.split("#")[0];
+    if (!this.promises[urlNoFrag]) {
+      this.promises[urlNoFrag] = this.fetchOrCreate(url, initIfMissing);
     }
-    return this.promises[url];
+    return this.promises[urlNoFrag];
   }
   async getSubjectAt(
     uri: string,
