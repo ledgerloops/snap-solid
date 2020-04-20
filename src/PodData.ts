@@ -5,8 +5,22 @@ import {
   fetchDocument as fetchDocumentTripleDoc,
   LocalTripleDocumentWithRef
 } from "tripledoc";
-import { acl, ldp, rdf, space, schema, vcard } from "rdf-namespaces";
-import uuid from "uuid/v4";
+import {
+  acl as aclUpstream,
+  ldp,
+  rdf,
+  space,
+  schema,
+  vcard
+} from "rdf-namespaces";
+import { v4 as uuid } from "uuid";
+
+const acl = Object.assign(
+  {
+    default: "http://www.w3.org/ns/auth/acl#default"
+  },
+  aclUpstream
+);
 
 // copied from
 // https://github.com/inrupt/friend-requests-exploration/blob/master/src/services/usePersonDetails.ts
@@ -38,7 +52,9 @@ export class PodData {
     this.promises = {};
   }
 
-  async createDocumentOrContainer(url: string) {
+  async createDocumentOrContainer(
+    url: string
+  ): Promise<LocalTripleDocumentWithRef> {
     if (url.substr(-1) === "/") {
       const dummy = createDocument(url + ".dummy");
       await dummy.save();
@@ -155,12 +171,16 @@ export class PodData {
     return addressBookSub.getAllRefs(vcard.hasMember);
   }
 
-  async generateContactSubUri(): Promise<string> {
-    const addressBookSub = await this.getAddressBookSub();
-    const ref: string = addressBookSub.asRef();
+  generateSubUri(ref: string): string {
     const fragment = `#${uuid()}`;
     console.log({ fragment, ref });
     return new URL(fragment, ref).toString();
+  }
+
+  async generateContactSubUri(): Promise<string> {
+    const addressBookSub = await this.getAddressBookSub();
+    const ref: string = addressBookSub.asRef();
+    return this.generateSubUri(ref);
   }
 
   async getContact(
@@ -193,6 +213,57 @@ export class PodData {
     };
   }
 
+  addAuthorization(
+    doc: LocalTripleDocumentWithRef,
+    subId: string,
+    webId: string,
+    preds: string[],
+    modes: string[]
+  ): void {
+    console.log("adding subject", subId);
+    const sub = doc.addSubject({
+      identifier: subId
+    });
+    sub.addRef(rdf.type, acl.Authorization);
+    sub.addRef(acl.agent, webId);
+    preds.forEach((pred: string) => {
+      sub.addRef(pred, doc.asRef());
+    });
+    modes.forEach((mode: string) => {
+      sub.addRef(acl.mode, mode);
+    });
+  }
+  addAuthorizations(
+    doc: LocalTripleDocumentWithRef,
+    map: { [wedId: string]: string[] },
+    preds: string[]
+  ): void {
+    Object.keys(map).forEach((webId: string) => {
+      const otherSubId = this.generateSubUri(doc.asRef());
+      this.addAuthorization(doc, otherSubId, webId, preds, map[webId]);
+    });
+  }
+  async ensureAcl(
+    forDoc: TripleDocument,
+    access: { [wedId: string]: string[] },
+    defaults: { [wedId: string]: string[] }
+  ): Promise<void> {
+    const aclDocUrl: string = forDoc.getAclRef();
+    await this.getDocumentAt(
+      aclDocUrl,
+      async (newDoc: LocalTripleDocumentWithRef): Promise<void> => {
+        // FIXME: leave out acl.default if ACL is not for a container.
+        const ownerPreds = [acl.accessTo, acl.default];
+        this.addAuthorization(newDoc, "#owner", this.sessionWebId, ownerPreds, [
+          acl.Read,
+          acl.Write,
+          acl.Control
+        ]);
+        this.addAuthorizations(newDoc, access, [acl.accessTo]);
+        this.addAuthorizations(newDoc, defaults, [acl.default]);
+      }
+    );
+  }
   async addContact(
     theirWebId: string,
     nick: string
@@ -213,11 +284,13 @@ export class PodData {
       snap.ourInbox,
       `${this.podRoot}snap/${nick}/our-in/`
     );
+    await this.ensureAcl(ourInbox, { [theirWebId]: [acl.Append] }, {});
     const ourOutbox = await this.getDocumentOn(
       contactSub,
       snap.ourOutbox,
       `${this.podRoot}snap/${nick}/our-out/`
     );
+    await this.ensureAcl(ourOutbox, {}, {});
     await (contactSub.getDocument() as LocalTripleDocumentWithRef).save();
     return {
       ourInbox,
