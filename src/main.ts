@@ -67,9 +67,20 @@ window.onload = (): void => {
         //   amount: 20
         // });
       });
+
       contacts.map((contact: Contact) => {
         const li = document.createElement("li");
-        li.innerText = contact.theirName;
+        li.appendChild(document.createTextNode(contact.theirName));
+        const button = document.createElement("button");
+        button.onclick = (): void => {
+          contact.sendMessage({
+            transId: 1,
+            newState: SnapTransactionState.Proposing,
+            amount: 20
+          });
+        };
+        button.appendChild(document.createTextNode("Send Message"));
+        li.appendChild(button);
         document.getElementById("contacts").appendChild(li);
       });
       if (!foundPeer) {
