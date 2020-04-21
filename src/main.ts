@@ -2,6 +2,7 @@ import { SnapTransactionState } from "snap-checker";
 import { fetchDocument } from "tripledoc";
 import { ldp, space, acl, vcard } from "rdf-namespaces";
 import { PodData } from "./PodData";
+import { Contact } from "./Contact";
 
 window.onload = (): void => {
   console.log("document ready");
@@ -27,7 +28,7 @@ window.onload = (): void => {
         0,
         session.webId.length - "profile/card#me".length
       );
-      
+
       const podData = new PodData(session.webId, podRoot);
       ((window as unknown) as any).podData = podData;
       ((window as unknown) as any).fetchDocument = fetchDocument;
@@ -38,21 +39,53 @@ window.onload = (): void => {
       ((window as unknown) as any).as = {
         following: "https://www.w3.org/TR/activitypub/#following"
       };
+      ((window as unknown) as any).addSomeone = async (): Promise<void> => {
+        const webId = document.getElementById("webId").getAttribute("value");
+        const nick = document.getElementById("nick").getAttribute("value");
+        await podData.addContact(webId, nick);
+      };
 
-      const contactUris = await podData.getContacts();
-      await Promise.all(
-        contactUris.map(async (contactUri: string) => {
-          const contact = await podData.getContact(contactUri);
-          console.log("Loading bilateral message history", contact);
-          await contact.fetchMessages();
-          // console.log("Sending a message", contact);
-          // return contact.sendMessage({
-          //   transId: 1,
-          //   newState: SnapTransactionState.Proposing,
-          //   amount: 20
-          // });
-        })
-      );
+      const contacts = await podData.getContacts();
+      let peer = "alice";
+      if (
+        session.webId === "https://lolcathost.de/storage/alice/profile/card#me"
+      ) {
+        peer = "bob";
+      }
+      let foundPeer = false;
+      const promises = contacts.map(async (contact: Contact) => {
+        console.log("loading contact", contact);
+        if (contact.theirInbox.split("/")[4] === peer) {
+          foundPeer = true;
+        }
+        console.log("Loading bilateral message history", contact);
+        await contact.fetchMessages();
+        // console.log("Sending a message", contact);
+        // return contact.sendMessage({
+        //   transId: 1,
+        //   newState: SnapTransactionState.Proposing,
+        //   amount: 20
+        // });
+      });
+      contacts.map((contact: Contact) => {
+        const li = document.createElement("li");
+        li.innerText = contact.theirName;
+        document.getElementById("contacts").appendChild(li);
+      });
+      if (!foundPeer) {
+        document
+          .getElementById("webId")
+          .setAttribute(
+            "value",
+            `https://lolcathost.de/storage/${peer}/profile/card#me`
+          );
+        document
+          .getElementById("nick")
+          .setAttribute(
+            "value",
+            peer.substring(0, 1).toLocaleUpperCase() + peer.substring(1)
+          );
+      }
 
       document.getElementById(
         "loginBanner"

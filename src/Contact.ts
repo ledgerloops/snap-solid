@@ -22,35 +22,43 @@ export class Contact {
   podData: PodData;
   ourInbox: TripleDocument;
   ourOutbox: TripleDocument;
-  theirInbox: TripleDocument;
+  theirInbox: string;
   ourName: string;
   theirName: string;
   unit: string;
   constructor(
     ourInbox: TripleDocument,
     ourOutbox: TripleDocument,
-    theirInbox: TripleDocument,
+    theirInbox: string,
     ourName: string,
     theirName: string,
     unit: string,
     podData: PodData
   ) {
+    console.log("Constructing Contact model", {
+      ourInbox,
+      ourOutbox,
+      theirInbox,
+      ourName,
+      theirName,
+      unit
+    });
     this.snapChecker = new SnapChecker([]);
+    this.ourInbox = ourInbox;
+    this.ourOutbox = ourOutbox;
+    this.theirInbox = theirInbox;
     this.ourName = ourName;
     this.theirName = theirName;
     this.unit = unit;
     this.podData = podData;
   }
 
-  async sendMessageTo(
-    msg: StateTransition,
-    box: TripleDocument
-  ): Promise<void> {
+  async sendMessageTo(msg: StateTransition, box: string): Promise<void> {
     await snapMessageToWeb(msg, box);
   }
 
   async sendMessage(msg: StateTransition): Promise<void> {
-    this.sendMessageTo(msg, this.ourOutbox);
+    this.sendMessageTo(msg, this.ourOutbox.asRef());
     this.sendMessageTo(msg, this.theirInbox);
   }
 

@@ -3,7 +3,7 @@ import {
   SnapTransactionState,
   checkStateTransitionIsValid
 } from "snap-checker";
-import { LocalTripleDocumentForContainer, TripleDocument } from "tripledoc";
+import { TripleDocument, createDocumentInContainer } from "tripledoc";
 
 const prefix = "https://legerloops.com/snap/#";
 const ns = {
@@ -62,9 +62,10 @@ export async function snapMessageFromWeb(
 
 export async function snapMessageToWeb(
   msg: StateTransition,
-  doc: LocalTripleDocumentForContainer
+  box: string
 ): Promise<void> {
   checkStateTransitionIsValid(msg);
+  const doc = createDocumentInContainer(box);
   const sub = doc.addSubject({
     identifier: "#this"
   });

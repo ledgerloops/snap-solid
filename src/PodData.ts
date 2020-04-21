@@ -174,9 +174,15 @@ export class PodData {
       this.podRoot + "contacts.ttl#friends"
     );
   }
-  async getContacts(): Promise<string[]> {
+  async getContacts(): Promise<Contact[]> {
     const addressBookSub = await this.getAddressBookSub();
-    return addressBookSub.getAllRefs(vcard.hasMember);
+    const contactUris = addressBookSub.getAllRefs(vcard.hasMember);
+    const promises: Promise<Contact>[] = contactUris.map(
+      (contactUri: string) => {
+        return this.getContact(contactUri);
+      }
+    );
+    return Promise.all(promises);
   }
 
   generateSubUri(ref: string): string {
@@ -194,7 +200,7 @@ export class PodData {
   async getContact(uri: string): Promise<Contact> {
     const contactSub = await this.getSubjectAt(uri);
     const theirWebId = contactSub.getRef(contacts.webId);
-    const nick = contactSub.getRef(contacts.nick);
+    const nick = contactSub.getString(contacts.nick);
     const theirProfileDoc = await fetchDocumentTripleDoc(theirWebId);
     const theirInbox = theirProfileDoc.getSubject(theirWebId).getRef(ldp.inbox);
 
@@ -211,10 +217,11 @@ export class PodData {
     return new Contact(
       ourInbox,
       ourOutbox,
-      await this.getDocumentAt(theirInbox),
+      theirInbox,
       "me",
       nick,
-      "10E-6 USD"
+      "10E-6 USD",
+      this
     );
   }
 
