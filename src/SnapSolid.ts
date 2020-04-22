@@ -14,7 +14,9 @@ export class SnapSolid {
   }
   async addContact(webId: string, nick: string): Promise<void> {
     const newSolidContact = await this.podData.addContact(webId, nick);
-    this.snapContacts.push(new SnapContact(newSolidContact));
+    const snapContact = new SnapContact(newSolidContact);
+    await snapContact.loadMessages();
+    this.snapContacts.push(snapContact);
   }
   async getContacts(): Promise<SnapContact[]> {
     if (this.snapContacts === undefined) {
@@ -23,6 +25,11 @@ export class SnapSolid {
         return new SnapContact(solidContact);
       });
     }
+    await Promise.all(
+      this.snapContacts.map((contact: SnapContact) => {
+        contact.loadMessages();
+      })
+    );
     return this.snapContacts;
   }
 }
