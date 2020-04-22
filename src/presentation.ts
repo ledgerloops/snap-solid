@@ -1,12 +1,11 @@
-import { PodData } from "./solid-models/PodData";
 import { fetchDocument, createDocumentInContainer } from "tripledoc";
 import { ldp, space, acl, vcard } from "rdf-namespaces";
-import { SolidContact } from "./solid-models/SolidContact";
 import { SnapTransactionState } from "snap-checker";
 import { SnapSolid } from "./SnapSolid";
 import { SnapContact } from "./SnapContact";
 
-function forDebugging(window: any, snapSolid: SnapSolid) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function forDebugging(window: any, snapSolid: SnapSolid): void {
   window.snapSolid = snapSolid;
   window.fetchDocument = fetchDocument;
   window.createDocumentInContainer = createDocumentInContainer;
@@ -20,12 +19,13 @@ function forDebugging(window: any, snapSolid: SnapSolid) {
 }
 
 export async function runPresentation(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   window: any,
   sessionWebId: string
 ): Promise<void> {
   const snapSolid = new SnapSolid(sessionWebId);
   forDebugging(window as unknown, snapSolid);
-  
+
   window.addSomeone = async (): Promise<void> => {
     const webId = document.getElementById("webId").getAttribute("value");
     const nick = document.getElementById("nick").getAttribute("value");
@@ -38,25 +38,25 @@ export async function runPresentation(
     peer = "bob";
   }
   let foundPeer = false;
-  const promises = contacts.map(async (contact: SnapContact) => {
+  contacts.map(async (contact: SnapContact) => {
     console.log("loading contact", contact);
     if (contact.solidContact.theirInbox.split("/")[4] === peer) {
       foundPeer = true;
     }
-  });
-
-  contacts.map((contact: SnapContact) => {
     const li = document.createElement("li");
     li.appendChild(document.createTextNode(contact.solidContact.nick));
+    const amountInput = document.createElement("input");
+    amountInput.setAttribute("value", "20");
+    li.appendChild(amountInput);
     const button = document.createElement("button");
     button.onclick = (): void => {
       contact.sendMessage({
         transId: 1,
         newState: SnapTransactionState.Proposing,
-        amount: 20
+        amount: parseInt(amountInput.getAttribute("value"))
       });
     };
-    button.appendChild(document.createTextNode("Send Message"));
+    button.appendChild(document.createTextNode("Send IOU"));
     li.appendChild(button);
     document.getElementById("contacts").appendChild(li);
   });
@@ -65,7 +65,9 @@ export async function runPresentation(
       .getElementById("webId")
       .setAttribute(
         "value",
-        `https://lolcathost.de/storage/${encodeURIComponent(peer)}/profile/card#me`
+        `https://lolcathost.de/storage/${encodeURIComponent(
+          peer
+        )}/profile/card#me`
       );
     document
       .getElementById("nick")

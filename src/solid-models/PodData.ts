@@ -280,14 +280,7 @@ export class PodData {
     );
   }
 
-  async addContact(
-    theirWebId: string,
-    nick: string
-  ): Promise<{
-    ourInbox: TripleDocument;
-    ourOutbox: TripleDocument;
-    theirInbox: string;
-  }> {
+  async addContact(theirWebId: string, nick: string): Promise<SolidContact> {
     const uri = await this.generateContactSubUri();
     const addressBookSub: TripleSubject = await this.getAddressBookSub();
     addressBookSub.addRef(vcard.hasMember, uri);
@@ -309,22 +302,9 @@ export class PodData {
       `${this.podRoot}snap/${encodeURIComponent(nick)}/our-out/`
     );
     await this.ensureAcl(ourOutbox, {}, {});
-    // FIXME: These are in the same doc, and we fetched it only once
-    // so we should also need to save it only once?
     const docUri = await (addressBookSub.getDocument() as LocalTripleDocumentWithRef).asRef();
-    const docUri2 = await (contactSub.getDocument() as LocalTripleDocumentWithRef).asRef();
-    if (docUri !== docUri2) {
-      console.log({ docUri, docUri2 });
-      throw new Error("something went wrong with the doc URIs!");
-    }
     const doc = await this.getDocumentAt(docUri);
     await (doc as LocalTripleDocumentWithRef).save();
-    const doc2 = await this.getDocumentAt(docUri);
-    await (doc2 as LocalTripleDocumentWithRef).save();
-    return {
-      ourInbox,
-      ourOutbox,
-      theirInbox
-    };
+    return new SolidContact(ourInbox, ourOutbox, theirInbox, nick, this);
   }
 }

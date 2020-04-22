@@ -74,9 +74,4 @@ export class SolidContact {
     console.log("fetchReceivedMessages");
     return this.fetchMessagesFrom(this.ourInbox);
   }
-
-  async replayMessages(): Promise<void> {
-    console.log("fetchMessages");
-    await Promise.all([this.fetchReceivedMessages(), this.fetchSentMessages()]);
-  }
 }

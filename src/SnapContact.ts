@@ -111,38 +111,28 @@ export class SnapContact {
     );
   }
 
-  async fetchMessagesFrom(
-    box: TripleDocument,
-    from: string,
-    to: string,
-    unit: string
-  ): Promise<TripleDocument[]> {
-    const docs: TripleDocument[] = await this.solidContact.fetchMessagesFrom(
-      box
-    );
-    docs.map((doc: TripleDocument) => {
+  async loadMessages(): Promise<void> {
+    const docsSent: TripleDocument[] = await this.solidContact.fetchSentMessages();
+    const docsRcvd: TripleDocument[] = await this.solidContact.fetchReceivedMessages();
+    docsSent.map((doc: TripleDocument) => {
       const snapMessage = snapMessageFromWeb(doc);
       this.snapChecker.processMessage({
-        from,
-        to,
-        unit,
+        from: "me",
+        to: this.solidContact.nick,
+        unit: "10E-6 USD",
         stateTransition: snapMessage,
         time: new Date()
       });
     });
-    return docs;
-  }
-
-  async fetchSentMessages(): Promise<TripleDocument[]> {
-    console.log("fetchSentMessages");
-    return this.solidContact.fetchSentMessages();
-  }
-  async fetchReceivedMessages(): Promise<TripleDocument[]> {
-    console.log("fetchReceivedMessages");
-    return this.solidContact.fetchReceivedMessages();
-  }
-
-  async loadMessages(): Promise<void> {
-    return this.solidContact.replayMessages();
+    docsRcvd.map((doc: TripleDocument) => {
+      const snapMessage = snapMessageFromWeb(doc);
+      this.snapChecker.processMessage({
+        from: this.solidContact.nick,
+        to: "me",
+        unit: "10E-6 USD",
+        stateTransition: snapMessage,
+        time: new Date()
+      });
+    });
   }
 }
