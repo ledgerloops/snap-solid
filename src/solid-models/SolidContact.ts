@@ -12,13 +12,6 @@ export const as = {
   following: "https://www.w3.org/TR/activitypub/#following"
 };
 
-const snap = {
-  ourInbox: "https://ledgerloops.com/snap/#our-in",
-  ourOutbox: "https://ledgerloops.com/snap/#our-out",
-  theirInbox: "https://ledgerloops.com/snap/#their-in",
-  root: "https://ledgerloops.com/snap/#root"
-};
-
 export class SolidContact {
   podData: PodData;
   ourInbox: TripleDocument;
@@ -79,14 +72,8 @@ export class SolidContact {
     return this.fetchMessagesFrom(this.ourInbox);
   }
 
-  async fetchMessages(): Promise<void> {
+  async replayMessages(): Promise<void> {
     console.log("fetchMessages");
-    await Promise.all([
-      this.fetchReceivedMessages()
-      // this.fetchSentMessages()
-    ]);
-  }
-  async subscribeToReceivedMessage(): Promise<void> {
-    //
+    await Promise.all([this.fetchReceivedMessages(), this.fetchSentMessages()]);
   }
 }

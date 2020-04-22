@@ -2,7 +2,6 @@ import {
   TripleDocument,
   TripleSubject,
   createDocument,
-  fetchDocument as fetchDocumentTripleDoc,
   LocalTripleDocumentWithRef,
   fetchDocument
 } from "tripledoc";
@@ -60,7 +59,7 @@ export class PodData {
     if (url.substr(-1) === "/") {
       const dummy = createDocument(url + ".dummy");
       await dummy.save();
-      return fetchDocumentTripleDoc(url);
+      return fetchDocument(url);
     }
     return createDocument(url);
   }
@@ -70,7 +69,7 @@ export class PodData {
   ): Promise<TripleDocument> {
     let fetched: TripleDocument | null = null;
     try {
-      fetched = await fetchDocumentTripleDoc(url);
+      fetched = await fetchDocument(url);
     } catch (e) {
       // e.g. 404 etc.
     }
@@ -201,7 +200,7 @@ export class PodData {
     const contactSub = await this.getSubjectAt(uri);
     const theirWebId = contactSub.getRef(contacts.webId);
     const nick = contactSub.getString(contacts.nick);
-    const theirProfileDoc = await fetchDocumentTripleDoc(theirWebId);
+    const theirProfileDoc = await fetchDocument(theirWebId);
     const theirInbox = theirProfileDoc.getSubject(theirWebId).getRef(ldp.inbox);
 
     const ourInbox = await this.getDocumentOn(
@@ -295,7 +294,7 @@ export class PodData {
     const contactSub = await this.getSubjectAt(uri);
     contactSub.addRef(contacts.webId, theirWebId);
     contactSub.addString(contacts.nick, nick);
-    const theirProfileDoc = await fetchDocumentTripleDoc(theirWebId);
+    const theirProfileDoc = await fetchDocument(theirWebId);
     const theirInbox = theirProfileDoc.getSubject(theirWebId).getRef(ldp.inbox);
 
     const ourInbox = await this.getDocumentOn(
