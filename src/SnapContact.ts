@@ -3,6 +3,7 @@ import { snapMessageToWeb, snapMessageFromWeb } from "./message";
 import { ldp } from "rdf-namespaces";
 import { TripleDocument } from "tripledoc";
 import { PodData } from "./PodData";
+import { SolidContact } from "./solid-models/SolidContact";
 
 // copied from
 // https://github.com/inrupt/friend-requests-exploration/blob/master/src/services/usePersonDetails.ts
@@ -17,12 +18,9 @@ const snap = {
   root: "https://ledgerloops.com/snap/#root"
 };
 
-export class Contact {
+export class SnapContact {
   snapChecker: SnapChecker;
-  podData: PodData;
-  ourInbox: TripleDocument;
-  ourOutbox: TripleDocument;
-  theirInbox: string;
+  solidContact: SolidContact;
   ourName: string;
   theirName: string;
   unit: string;
@@ -43,23 +41,19 @@ export class Contact {
       theirName,
       unit
     });
-    this.snapChecker = new SnapChecker([]);
-    this.ourInbox = ourInbox;
-    this.ourOutbox = ourOutbox;
-    this.theirInbox = theirInbox;
+    this.solidContact = new SolidContact(
+      ourInbox,
+      ourOutbox,
+      theirInbox,
+      podData
+    );
     this.ourName = ourName;
     this.theirName = theirName;
     this.unit = unit;
-    this.podData = podData;
-  }
-
-  async sendMessageTo(msg: StateTransition, box: string): Promise<void> {
-    await snapMessageToWeb(msg, box);
   }
 
   async sendMessage(msg: StateTransition): Promise<void> {
-    this.sendMessageTo(msg, this.ourOutbox.asRef());
-    this.sendMessageTo(msg, this.theirInbox);
+    await this.solidContact.sendMessage(msg);
   }
 
   async fetchMessagesFrom(
@@ -67,44 +61,36 @@ export class Contact {
     from: string,
     to: string,
     unit: string
-  ): Promise<void> {
+  ): Promise<TripleDocument[]> {
     const boxSub = box.getSubject("");
     const docs: string[] = boxSub.getAllRefs(ldp.contains);
     console.log("fetchMessagesFrom", box.asRef(), from, to, unit);
-    const promises: Promise<void>[] = docs.map(
-      async (msgDocUrl: string): Promise<void> => {
+    const promises: Promise<TripleDocument>[] = docs.map(
+      async (msgDocUrl: string): Promise<TripleDocument> => {
         console.log("Fetching", msgDocUrl);
-        const thisDoc = await this.podData.getDocumentAt(msgDocUrl);
-        const snapMessage = await snapMessageFromWeb(thisDoc);
-        this.snapChecker.processMessage({
-          from,
-          to,
-          unit,
-          stateTransition: snapMessage,
-          time: new Date()
-        });
+        return this.podData.getDocumentAt(msgDocUrl);
       }
     );
-    await Promise.all(promises);
+    docs.map((doc: TripleDocument) => {
+      const snapMessage = await snapMessageFromWeb(doc);
+      this.snapChecker.processMessage({
+        from,
+        to,
+        unit,
+        stateTransition: snapMessage,
+        time: new Date()
+      });
+    });
+    return Promise.all(promises);
   }
 
-  async fetchSentMessages(): Promise<void> {
+  async fetchSentMessages(): Promise<TripleDocument[]> {
     console.log("fetchSentMessages");
-    await this.fetchMessagesFrom(
-      this.ourOutbox,
-      this.ourName,
-      this.theirName,
-      this.unit
-    );
+    return this.solidContact.fetchSentMessages();
   }
-  async fetchReceivedMessages(): Promise<void> {
+  async fetchReceivedMessages(): Promise<TripleDocument[]> {
     console.log("fetchReceivedMessages");
-    await this.fetchMessagesFrom(
-      this.ourInbox,
-      this.ourName,
-      this.theirName,
-      this.unit
-    );
+    return this.solidContact.fetchReceivedMessages();
   }
 
   async fetchMessages(): Promise<void> {

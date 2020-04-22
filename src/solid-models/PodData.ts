@@ -15,7 +15,7 @@ import {
   vcard
 } from "rdf-namespaces";
 import { v4 as uuid } from "uuid";
-import { Contact } from "./Contact";
+import { SolidContact } from "./SolidContact";
 
 const acl = Object.assign(
   {
@@ -174,10 +174,10 @@ export class PodData {
       this.podRoot + "contacts.ttl#friends"
     );
   }
-  async getContacts(): Promise<Contact[]> {
+  async getContacts(): Promise<SolidContact[]> {
     const addressBookSub = await this.getAddressBookSub();
     const contactUris = addressBookSub.getAllRefs(vcard.hasMember);
-    const promises: Promise<Contact>[] = contactUris.map(
+    const promises: Promise<SolidContact>[] = contactUris.map(
       (contactUri: string) => {
         return this.getContact(contactUri);
       }
@@ -197,7 +197,7 @@ export class PodData {
     return this.generateSubUri(ref);
   }
 
-  async getContact(uri: string): Promise<Contact> {
+  async getContact(uri: string): Promise<SolidContact> {
     const contactSub = await this.getSubjectAt(uri);
     const theirWebId = contactSub.getRef(contacts.webId);
     const nick = contactSub.getString(contacts.nick);
@@ -214,15 +214,7 @@ export class PodData {
       snap.ourOutbox,
       `${this.podRoot}snap/${nick}/our-out/`
     );
-    return new Contact(
-      ourInbox,
-      ourOutbox,
-      theirInbox,
-      "me",
-      nick,
-      "10E-6 USD",
-      this
-    );
+    return new SolidContact(ourInbox, ourOutbox, theirInbox, this);
   }
 
   addAuthorization(
