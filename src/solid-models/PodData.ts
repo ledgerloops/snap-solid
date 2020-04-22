@@ -206,14 +206,14 @@ export class PodData {
     const ourInbox = await this.getDocumentOn(
       contactSub,
       snap.ourInbox,
-      `${this.podRoot}snap/${nick}/our-in/`
+      `${this.podRoot}snap/${encodeURIComponent(nick)}/our-in/`
     );
     const ourOutbox = await this.getDocumentOn(
       contactSub,
       snap.ourOutbox,
-      `${this.podRoot}snap/${nick}/our-out/`
+      `${this.podRoot}snap/${encodeURIComponent(nick)}/our-out/`
     );
-    return new SolidContact(ourInbox, ourOutbox, theirInbox, this);
+    return new SolidContact(ourInbox, ourOutbox, theirInbox, nick, this);
   }
 
   addAuthorization(

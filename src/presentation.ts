@@ -4,6 +4,7 @@ import { ldp, space, acl, vcard } from "rdf-namespaces";
 import { SolidContact } from "./solid-models/SolidContact";
 import { SnapTransactionState } from "snap-checker";
 import { SnapSolid } from "./SnapSolid";
+import { SnapContact } from "./SnapContact";
 
 function forDebugging(window: any, snapSolid: SnapSolid) {
   window.snapSolid = snapSolid;
@@ -37,16 +38,16 @@ export async function runPresentation(
     peer = "bob";
   }
   let foundPeer = false;
-  const promises = contacts.map(async (contact: SolidContact) => {
+  const promises = contacts.map(async (contact: SnapContact) => {
     console.log("loading contact", contact);
-    if (contact.theirInbox.split("/")[4] === peer) {
+    if (contact.solidContact.theirInbox.split("/")[4] === peer) {
       foundPeer = true;
     }
   });
 
-  contacts.map((contact: SolidContact) => {
+  contacts.map((contact: SnapContact) => {
     const li = document.createElement("li");
-    li.appendChild(document.createTextNode(contact.theirName));
+    li.appendChild(document.createTextNode(contact.solidContact.nick));
     const button = document.createElement("button");
     button.onclick = (): void => {
       contact.sendMessage({
@@ -64,7 +65,7 @@ export async function runPresentation(
       .getElementById("webId")
       .setAttribute(
         "value",
-        `https://lolcathost.de/storage/${peer}/profile/card#me`
+        `https://lolcathost.de/storage/${encodeURIComponent(peer)}/profile/card#me`
       );
     document
       .getElementById("nick")

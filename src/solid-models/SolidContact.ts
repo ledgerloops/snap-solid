@@ -17,10 +17,12 @@ export class SolidContact {
   ourInbox: TripleDocument;
   ourOutbox: TripleDocument;
   theirInbox: string;
+  nick: string;
   constructor(
     ourInbox: TripleDocument,
     ourOutbox: TripleDocument,
     theirInbox: string,
+    nick: string,
     podData: PodData
   ) {
     console.log("Constructing Contact model", {
@@ -31,6 +33,7 @@ export class SolidContact {
     this.ourInbox = ourInbox;
     this.ourOutbox = ourOutbox;
     this.theirInbox = theirInbox;
+    this.nick = nick;
     this.podData = podData;
   }
 
