@@ -84,7 +84,7 @@ export class SnapContact {
   solidContact: SolidContact;
   constructor(solidContact: SolidContact) {
     this.solidContact = solidContact;
-    this.snapChecker = new SnapChecker([]);
+    this.snapChecker = new SnapChecker(["me"]);
   }
 
   async sendMessage(msg: StateTransition): Promise<void> {
