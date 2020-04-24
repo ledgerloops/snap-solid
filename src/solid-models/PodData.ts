@@ -71,6 +71,11 @@ export class PodData {
     try {
       fetched = await fetchDocument(url);
     } catch (e) {
+      if (e.message === "Fetching the Document failed: 401 Unauthorized.") {
+        console.log("Throwing fetch error");
+        throw e;
+      }
+      console.log("Swallowing fetch error", e.message);
       // e.g. 404 etc.
     }
     if (fetched === null) {
@@ -82,13 +87,21 @@ export class PodData {
     }
     return fetched;
   }
-  getDocumentAt(
+  async getDocumentAt(
     url: string,
     initIfMissing?: (newDoc: LocalTripleDocumentWithRef) => Promise<void>
   ): Promise<TripleDocument> {
     const urlNoFrag = url.split("#")[0];
     if (!this.promises[urlNoFrag]) {
       this.promises[urlNoFrag] = this.fetchOrCreate(url, initIfMissing);
+    }
+    try {
+      await this.promises[urlNoFrag];
+    } catch (e) {
+      if (e.message === "Fetching the Document failed: 401 Unauthorized.") {
+        throw new Error("Try clearing your cookie!");
+      }
+      throw e;
     }
     return this.promises[urlNoFrag];
   }
@@ -186,7 +199,6 @@ export class PodData {
 
   generateSubUri(ref: string): string {
     const fragment = `#${uuid()}`;
-    console.log({ fragment, ref });
     return new URL(fragment, ref).toString();
   }
 
@@ -224,7 +236,6 @@ export class PodData {
     preds: string[],
     modes: string[]
   ): void {
-    console.log("adding subject", subFragStr);
     const sub = doc.addSubject({
       identifier: subFragStr
     });

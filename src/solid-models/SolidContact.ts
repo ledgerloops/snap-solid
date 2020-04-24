@@ -25,11 +25,6 @@ export class SolidContact {
     nick: string,
     podData: PodData
   ) {
-    console.log("Constructing Contact model", {
-      ourInbox,
-      ourOutbox,
-      theirInbox
-    });
     this.ourInbox = ourInbox;
     this.ourOutbox = ourOutbox;
     this.theirInbox = theirInbox;
@@ -56,10 +51,8 @@ export class SolidContact {
   async fetchMessagesFrom(box: TripleDocument): Promise<TripleDocument[]> {
     const boxSub = box.getSubject("");
     const docs: string[] = boxSub.getAllRefs(ldp.contains);
-    // console.log("fetchMessagesFrom", box.asRef(), from, to, unit);
     const promises: Promise<TripleDocument>[] = docs.map(
       async (msgDocUrl: string): Promise<TripleDocument> => {
-        console.log("Fetching", msgDocUrl);
         return this.podData.getDocumentAt(msgDocUrl);
       }
     );
@@ -67,11 +60,9 @@ export class SolidContact {
   }
 
   async fetchSentMessages(): Promise<TripleDocument[]> {
-    console.log("fetchSentMessages");
     return this.fetchMessagesFrom(this.ourOutbox);
   }
   async fetchReceivedMessages(): Promise<TripleDocument[]> {
-    console.log("fetchReceivedMessages");
     return this.fetchMessagesFrom(this.ourInbox);
   }
 }

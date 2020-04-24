@@ -25,11 +25,13 @@ export class SnapSolid {
         return new SnapContact(solidContact);
       });
     }
+    console.log("Loading messages");
     await Promise.all(
       this.snapContacts.map((contact: SnapContact) => {
         contact.loadMessages();
       })
     );
+    console.log("Returning Snap Contacts");
     return this.snapContacts;
   }
 }

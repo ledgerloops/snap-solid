@@ -2,13 +2,15 @@ import { runPresentation } from "./presentation";
 
 window.onload = (): void => {
   console.log("document ready");
-  ((window as unknown) as {
+  const solidAuth = ((window as unknown) as {
     solid: {
       auth: {
         trackSession: (callback: (session: { webId: string }) => void) => void;
+        logout: () => void;
       };
     };
-  }).solid.auth.trackSession(async (session: { webId: string }) => {
+  }).solid.auth;
+  solidAuth.trackSession(async (session: { webId: string }) => {
     if (!session) {
       console.log("The user is not logged in");
       document.getElementById(
@@ -17,7 +19,16 @@ window.onload = (): void => {
       document.getElementById("ui").style.display = "none";
     } else {
       console.log(`Logged in as ${session.webId}`);
-      runPresentation(window as unknown, session.webId);
+      try {
+        await runPresentation(window as unknown, session.webId);
+      } catch (e) {
+        if (e.message === "Try clearing your cookie!") {
+          solidAuth.logout();
+          console.log("Logged out possibly stale session");
+        } else {
+          console.log("Unknown error", e.message);
+        }
+      }
     }
   });
 };

@@ -1,22 +1,7 @@
-import { fetchDocument, createDocumentInContainer } from "tripledoc";
-import { ldp, space, acl, vcard } from "rdf-namespaces";
 import { SnapTransactionState } from "snap-checker";
 import { SnapSolid } from "./SnapSolid";
 import { SnapContact } from "./SnapContact";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function forDebugging(window: any, snapSolid: SnapSolid): void {
-  window.snapSolid = snapSolid;
-  window.fetchDocument = fetchDocument;
-  window.createDocumentInContainer = createDocumentInContainer;
-  window.ldp = ldp;
-  window.space = space;
-  window.acl = acl;
-  window.vcard = vcard;
-  window.as = {
-    following: "https://www.w3.org/TR/activitypub/#following"
-  };
-}
+import { forDebugging } from "./forDebugging";
 
 export async function runPresentation(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,20 +11,23 @@ export async function runPresentation(
   const snapSolid = new SnapSolid(sessionWebId);
   forDebugging(window as unknown, snapSolid);
 
+  document.getElementById(
+    "loginBanner"
+  ).innerHTML = `Logged in as ${sessionWebId} <button onclick="solid.auth.logout()">Log out</button>`;
+  document.getElementById("ui").style.display = "block";
+
   window.addSomeone = async (): Promise<void> => {
     const webId = document.getElementById("webId").getAttribute("value");
     const nick = document.getElementById("nick").getAttribute("value");
     await snapSolid.addContact(webId, nick);
   };
-
-  const contacts = await snapSolid.getContacts();
   let peer = "alice";
   if (sessionWebId === "https://lolcathost.de/storage/alice/profile/card#me") {
     peer = "bob";
   }
   let foundPeer = false;
-  contacts.map(async (contact: SnapContact) => {
-    console.log("loading contact", contact);
+  const contacts = await snapSolid.getContacts();
+  const promises = contacts.map(async (contact: SnapContact) => {
     if (contact.solidContact.theirInbox.split("/")[4] === peer) {
       foundPeer = true;
     }
@@ -60,6 +48,7 @@ export async function runPresentation(
     li.appendChild(button);
     document.getElementById("contacts").appendChild(li);
   });
+
   if (!foundPeer) {
     document
       .getElementById("webId")
@@ -76,9 +65,5 @@ export async function runPresentation(
         peer.substring(0, 1).toLocaleUpperCase() + peer.substring(1)
       );
   }
-
-  document.getElementById(
-    "loginBanner"
-  ).innerHTML = `Logged in as ${sessionWebId} <button onclick="solid.auth.logout()">Log out</button>`;
-  document.getElementById("ui").style.display = "block";
+  return void Promise.all(promises);
 }
