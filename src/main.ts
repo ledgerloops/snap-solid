@@ -22,7 +22,10 @@ window.onload = (): void => {
       try {
         await runPresentation(window as unknown, session.webId);
       } catch (e) {
-        if (e.message === "Try clearing your cookie!") {
+        if (
+          e.message === "Try clearing your cookie!" ||
+          e.message === "Unauthorized"
+        ) {
           solidAuth.logout();
           console.log("Logged out possibly stale session");
         } else {
