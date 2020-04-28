@@ -2,9 +2,6 @@
   "name": "snap-solid",
   "version": "2.0.1",
   "description": "SNAP on top of Solid",
-  "files": [
-    "./lib"
-  ],
   "main": "./lib/main.js",
   "types": "./lib/main.d.ts",
   "scripts": {
@@ -18,7 +15,6 @@
     "postversion": "git push && git push --tags && npm publish",
     "prettier": "prettier --write \"{src,test,__mocks__}/**/*.ts\"",
     "preversion": "npm test",
-    "start": "node lib/examples/basic",
     "test": "npm run build && npm run lint && npm run jest",
     "version": "npm run build"
   },
