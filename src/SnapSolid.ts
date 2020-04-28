@@ -28,7 +28,7 @@ export class SnapSolid {
     console.log("Loading messages");
     await Promise.all(
       this.snapContacts.map((contact: SnapContact) => {
-        contact.loadMessages();
+        return contact.loadMessages();
       })
     );
     console.log("Returning Snap Contacts");

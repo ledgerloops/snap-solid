@@ -36,16 +36,33 @@ export async function runPresentation(
     const amountInput = document.createElement("input");
     amountInput.setAttribute("value", "20");
     li.appendChild(amountInput);
-    const button = document.createElement("button");
-    button.onclick = (): void => {
+
+    const sendButton = document.createElement("button");
+    sendButton.onclick = (): void => {
       contact.sendMessage({
         transId: 1,
         newState: SnapTransactionState.Proposing,
         amount: parseInt(amountInput.getAttribute("value"))
       });
     };
-    button.appendChild(document.createTextNode("Send IOU"));
-    li.appendChild(button);
+    sendButton.appendChild(document.createTextNode("Send IOU"));
+    li.appendChild(sendButton);
+
+    const trustInput = document.createElement("input");
+    trustInput.setAttribute("value", "20");
+    li.appendChild(trustInput);
+
+    const trustButton = document.createElement("button");
+    trustButton.onclick = (): void => {
+      contact.setTrust(parseInt(trustInput.getAttribute("value")));
+    };
+    trustButton.appendChild(document.createTextNode("Set Trust"));
+    li.appendChild(trustButton);
+
+    const paragraph = document.createElement("p");
+    const balances = contact.getBalances();
+    paragraph.innerText = `Current: ${balances.current} Payable: ${balances.payable} Receivable: ${balances.receivable}`;
+    li.appendChild(paragraph);
     document.getElementById("contacts").appendChild(li);
   });
 
