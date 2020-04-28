@@ -1,6 +1,6 @@
 {
   "name": "snap-solid",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "SNAP on top of Solid",
   "main": "./lib/main.js",
   "types": "./lib/main.d.ts",
