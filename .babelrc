@@ -11,6 +11,5 @@
     "@babel/preset-typescript"
   ],
   "plugins": [
-  ],
-  "sourceMaps": true
+  ]
 }

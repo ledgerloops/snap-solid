@@ -2,20 +2,20 @@
   "name": "snap-solid",
   "version": "1.1.0",
   "description": "SNAP on top of Solid",
-  "files": [
-    "src",
-    "lib"
-  ],
-  "main": "lib/index.js",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "scripts": {
-    "build": "webpack",
+    "build": "npm run build-lib && npm run build-types",
+    "build-lib": "babel src -d lib --source-maps --extensions \".ts\"",
+    "build-types": "tsc",
     "coverage": "jest --collect-coverage",
+    "dev": "ts-node-dev src/examples/basic",
     "jest": "jest",
     "lint": "eslint src/ test/ --ext .ts",
     "postversion": "git push && git push --tags && npm publish",
     "prettier": "prettier --write \"{src,test,__mocks__}/**/*.ts\"",
     "preversion": "npm test",
-    "start": "NODE_EXTRA_CA_CERTS=myCA.pem DEBUG=* node ./node_modules/solid-app-kit/lib/cli public/",
+    "start": "node lib/examples/basic",
     "test": "npm run build && npm run lint && npm run jest",
     "version": "npm run build"
   },
@@ -23,8 +23,8 @@
     "type": "git",
     "url": "git+https://github.com/ledgerloops/boilerplate.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Michiel B. de Jong",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/ledgerloops/boilerplate/issues"
   },
@@ -35,10 +35,9 @@
     "@babel/preset-env": "^7.8.7",
     "@babel/preset-typescript": "^7.8.3",
     "@types/jest": "^25.1.3",
+    "@types/node": "^13.9.1",
     "@typescript-eslint/eslint-plugin": "^2.22.0",
     "@typescript-eslint/parser": "^2.22.0",
-    "babel-jest": "^25.2.4",
-    "babel-loader": "^8.0.6",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-plugin-prettier": "^3.1.2",
@@ -46,11 +45,8 @@
     "jest": "^25.1.0",
     "prettier": "^1.19.1",
     "pretty-quick": "^2.0.1",
-    "solid-app-kit": "^1.5.3",
-    "source-map-loader": "^0.2.4",
-    "typescript": "^3.8.3",
-    "webpack": "^4.42.0",
-    "webpack-cli": "^3.3.11"
+    "ts-node-dev": "^1.0.0-pre.44",
+    "typescript": "^3.8.3"
   },
   "husky": {
     "hooks": {
@@ -58,10 +54,9 @@
     }
   },
   "dependencies": {
-    "plandoc": "github:michielbdejong/plandoc#fetchContainer",
     "rdf-namespaces": "^1.8.0",
-    "snap-checker": "^1.5.1",
-    "tripledoc": "^4.3.2",
+    "snap-checker": "^1.5.2",
+    "tripledoc": "^4.3.0",
     "uuid": "^7.0.3"
   }
 }
