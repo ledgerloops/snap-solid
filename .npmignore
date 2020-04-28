@@ -1,6 +1,3 @@
-node_modules
-lib
-coverage
 myCA.key
 myCA.pem
 myCA.srl
