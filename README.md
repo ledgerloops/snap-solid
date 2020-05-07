@@ -2,6 +2,8 @@
 
 SNAP in the browser, on top of Solid
 
+Presentation slides: [snap-on-solid.pdf](snap-on-solid.pdf)
+
 Create the following files:
 
 ```
