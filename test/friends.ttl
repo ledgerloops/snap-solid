@@ -1,0 +1,7 @@
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix as: <https://www.w3.org/TR/activitypub/#> .
+
+<Alice> as:following <Addressbook#Friends> .
+<Addressbook#Friends> a vcard:Group .
+<Addressbook#Friends> vcard:hasMember <BobEntry> .
+

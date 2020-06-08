@@ -1,0 +1,13 @@
+@prefix contacts: <https://ledgerloops.com/contacts/#> .
+@prefix snap: <https://ledgerloops.com/snap/#> .
+
+<BobEntry>
+  contacts:webId <Bob> ;
+  contacts:backlink <AliceEntryAtBob> ;
+  contacts:nick "Bob" ;
+  snap:ourInbox <BobInbox> ;
+  snap:ourOutbox <BobOutbox> .
+<AliceEntryAtBob>
+  snap:ourInbox <AliceInboxAtBob> .
+
+  
