@@ -40,6 +40,7 @@ const snap = {
   ourInbox: "https://ledgerloops.com/snap/#our-in",
   ourOutbox: "https://ledgerloops.com/snap/#our-out",
   theirInbox: "https://ledgerloops.com/snap/#their-in",
+  theirWebId: "https://ledgerloops.com/snap/#their-webid",
   root: "https://ledgerloops.com/snap/#root"
 };
 
@@ -214,6 +215,8 @@ export class PodData {
         });
         sub.addRef(rdf.type, "https://www.w3.org/ns/activitystreams#Follow");
         sub.addRef("http://www.w3.org/ns/solid/terms#p2pInbox", ourInbox);
+        sub.addRef("http://www.w3.org/ns/solid/terms#webId", this.sessionWebId);
+        sub.addString("http://www.w3.org/ns/solid/terms#nick", "Call me Al");
       }
     );
     this.ensureAcl(friendRequestDoc, { [theirWebId]: [acl.Read] }, {});
@@ -246,14 +249,21 @@ export class PodData {
       this.podRoot + "contacts.ttl#friends"
     );
   }
-  async getContacts(): Promise<SolidContact[]> {
+  async getContactSubs(): Promise<TripleSubject[]> {
     const addressBookSub = await this.getAddressBookSub();
     const contactUris = addressBookSub.getAllRefs(vcard.hasMember);
-    const promises: Promise<SolidContact>[] = contactUris.map(
+    const promises: Promise<TripleSubject>[] = contactUris.map(
       (contactUri: string) => {
-        return this.getContact(contactUri);
+        return this.getSubjectAt(contactUri);
       }
     );
+    return Promise.all(promises);
+  }
+  async getContacts(): Promise<SolidContact[]> {
+    const contactSubs = await this.getContactSubs();
+    const promises = contactSubs.map((contactSub: TripleSubject) => {
+      return this.getContact(contactSub);
+    });
     return Promise.all(promises);
   }
 
@@ -268,8 +278,7 @@ export class PodData {
     return this.generateSubUri(ref);
   }
 
-  async getContact(uri: string): Promise<SolidContact> {
-    const contactSub = await this.getSubjectAt(uri);
+  async getContact(contactSub: TripleSubject): Promise<SolidContact> {
     const theirWebId = contactSub.getRef(contacts.webId);
     const nick = contactSub.getString(contacts.nick);
     const theirProfileDoc = await fetchDocument(theirWebId);
@@ -290,6 +299,7 @@ export class PodData {
     const theirInbox = contactSub.getRef(snap.theirInbox);
 
     return new SolidContact(
+      theirWebId,
       ourInbox,
       ourOutbox,
       theirGlobalInbox,
@@ -299,6 +309,15 @@ export class PodData {
     );
   }
 
+  async findContact(webId: string): Promise<TripleSubject | undefined> {
+    const contactSubs = await this.getContactSubs();
+    const found = contactSubs.filter(
+      (contactSub: TripleSubject) => contactSub.getRef(snap.theirWebId) == webId
+    );
+    if (found.length >= 1) {
+      return found[0];
+    }
+  }
   addAuthorization(
     doc: LocalTripleDocumentWithRef,
     targetDocUrl: string,
@@ -362,7 +381,11 @@ export class PodData {
     );
   }
 
-  async addContact(theirWebId: string, nick: string): Promise<SolidContact> {
+  async addContact(
+    theirWebId: string,
+    nick: string,
+    theirInboxUrl?: string
+  ): Promise<SolidContact> {
     const uri = await this.generateContactSubUri();
     const addressBookSub: TripleSubject = await this.getAddressBookSub();
     addressBookSub.addRef(vcard.hasMember, uri);
@@ -388,13 +411,83 @@ export class PodData {
     await this.ensureAcl(ourOutbox, {}, {});
     await this.savePodDataSubject(addressBookSub);
     const newContact = new SolidContact(
+      theirWebId,
       ourInbox,
       ourOutbox,
       theirGlobalInbox,
       nick,
-      this
+      this,
+      theirInboxUrl
     );
     await this.sendFriendRequest(theirWebId, ourInbox.asRef());
     return newContact;
+  }
+  async processFriendRequest(
+    theirWebId: string,
+    theirNick: string,
+    theirInboxUrl: string
+  ): Promise<void> {
+    console.log("processFriendRequest", theirWebId, theirNick, theirInboxUrl);
+    const existingContactSub = await this.findContact(theirWebId);
+    if (existingContactSub) {
+      existingContactSub.addRef(snap.theirInbox, theirInboxUrl);
+      await (existingContactSub.getDocument() as TripleDocument).save();
+    } else {
+      const newContact = await this.addContact(
+        theirWebId,
+        theirNick,
+        theirInboxUrl
+      );
+      this.sendFriendRequest(theirWebId, newContact.ourInbox.asRef());
+    }
+  }
+  async checkFriendRequests(): Promise<void> {
+    console.log("checking friend requests!", this.sessionWebId);
+    const inboxDocs = await this.getGlobalInboxDocs();
+    const promises = inboxDocs.map(async (inboxDoc: TripleDocument) => {
+      const sub = inboxDoc.getSubject("#this");
+      const subType = sub.getRef(rdf.type);
+      if (subType === "https://www.w3.org/ns/activitystreams#Follow") {
+        const docAtSourceUrl = sub.getRef(
+          "http://www.w3.org/ns/solid/terms#dataAtSource"
+        );
+        console.log("yes", docAtSourceUrl);
+        const docAtSource = await this.getDocumentAt(docAtSourceUrl);
+        if (!docAtSource) {
+          console.log("no doc at source");
+          return;
+        }
+        const subAtSource = docAtSource.getSubject("#this");
+        if (!subAtSource) {
+          console.log("no sub at source");
+          return;
+        }
+        const theirWebId = subAtSource.getRef(
+          "http://www.w3.org/ns/solid/terms#webId"
+        );
+        if (!theirWebId) {
+          console.log("no theirWebId at source");
+          return;
+        }
+        const theirProfileDoc = await this.getDocumentAt(theirWebId);
+        const theirProfileSub = theirProfileDoc.getSubject(theirWebId);
+        const theirPodRoot = theirProfileSub.getRef(space.storage);
+        console.log("comparing", docAtSource.asRef(), theirPodRoot);
+        if (!docAtSource.asRef().startsWith(theirPodRoot)) {
+          console.log("not under their pod root");
+          return;
+        }
+        const theirNick = subAtSource.getString(
+          "http://www.w3.org/ns/solid/terms#nick"
+        );
+        const theirInboxUrl = subAtSource.getRef(
+          "http://www.w3.org/ns/solid/terms#p2pInbox"
+        );
+        this.processFriendRequest(theirWebId, theirNick, theirInboxUrl);
+      } else {
+        console.log("no", subType);
+      }
+    });
+    await Promise.all(promises);
   }
 }

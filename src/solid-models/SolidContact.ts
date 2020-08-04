@@ -14,8 +14,10 @@ export class SolidContact {
   ourOutbox: TripleDocument;
   theirGlobalInbox: string;
   theirInbox: string | undefined;
+  theirWebId: string;
   nick: string;
   constructor(
+    theirWebId: string,
     ourInbox: TripleDocument,
     ourOutbox: TripleDocument,
     theirGlobalInbox: string,
@@ -23,6 +25,7 @@ export class SolidContact {
     podData: PodData,
     theirInbox?: string
   ) {
+    this.theirWebId = theirWebId;
     this.ourInbox = ourInbox;
     this.ourOutbox = ourOutbox;
     this.theirGlobalInbox = theirGlobalInbox;
