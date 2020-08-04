@@ -1,9 +1,5 @@
 import { ldp } from "rdf-namespaces";
-import {
-  TripleDocument,
-  LocalTripleDocumentForContainer,
-  createDocumentInContainer
-} from "tripledoc";
+import { TripleDocument, LocalTripleDocumentForContainer } from "tripledoc";
 import { PodData } from "./PodData";
 
 // copied from
@@ -16,36 +12,30 @@ export class SolidContact {
   podData: PodData;
   ourInbox: TripleDocument;
   ourOutbox: TripleDocument;
-  theirInbox: string;
+  theirGlobalInbox: string;
+  theirInbox: string | undefined;
   nick: string;
   constructor(
     ourInbox: TripleDocument,
     ourOutbox: TripleDocument,
-    theirInbox: string,
+    theirGlobalInbox: string,
     nick: string,
-    podData: PodData
+    podData: PodData,
+    theirInbox?: string
   ) {
     this.ourInbox = ourInbox;
     this.ourOutbox = ourOutbox;
+    this.theirGlobalInbox = theirGlobalInbox;
     this.theirInbox = theirInbox;
     this.nick = nick;
     this.podData = podData;
   }
 
-  async sendMessageTo(
-    box: string,
-    cb: (doc: LocalTripleDocumentForContainer) => Promise<void>
-  ): Promise<void> {
-    const doc = createDocumentInContainer(box);
-    await cb(doc);
-    doc.save();
-  }
-
   async sendMessage(
     cb: (doc: LocalTripleDocumentForContainer) => Promise<void>
   ): Promise<void> {
-    this.sendMessageTo(this.ourOutbox.asRef(), cb);
-    this.sendMessageTo(this.theirInbox, cb);
+    this.podData.sendMessageTo(this.ourOutbox.asRef(), cb);
+    this.podData.sendMessageTo(this.theirInbox, cb);
   }
 
   async fetchMessagesFrom(box: TripleDocument): Promise<TripleDocument[]> {

@@ -1,9 +1,11 @@
 import {
   TripleDocument,
-  TripleSubject,
   createDocument,
   LocalTripleDocumentWithRef,
-  fetchDocument
+  fetchDocument,
+  LocalTripleDocumentForContainer,
+  createDocumentInContainer,
+  TripleSubject
 } from "tripledoc";
 import {
   acl as aclUpstream,
@@ -105,6 +107,13 @@ export class PodData {
     }
     return this.promises[urlNoFrag];
   }
+
+  async savePodDataSubject(sub: TripleSubject): Promise<void> {
+    const docUri = await (sub.getDocument() as LocalTripleDocumentWithRef).asRef();
+    const doc = await this.getDocumentAt(docUri);
+    await (doc as LocalTripleDocumentWithRef).save();
+  }
+
   async getSubjectAt(
     uri: string,
     initIfMissing?: (newDoc: LocalTripleDocumentWithRef) => Promise<void>
@@ -115,10 +124,13 @@ export class PodData {
   async followOrLink(
     s: TripleSubject,
     p: string,
-    defaultLocation: string
+    defaultLocation?: string
   ): Promise<string> {
     const followed: string | null = s.getRef(p);
     if (followed === null) {
+      if (!defaultLocation) {
+        throw new Error("link not found");
+      }
       s.addRef(p, defaultLocation);
       await (s.getDocument() as TripleDocument).save();
       return defaultLocation;
@@ -128,16 +140,7 @@ export class PodData {
   async getDocumentOn(
     s: TripleSubject,
     p: string,
-    defaultLocation: string,
-    initDocIfMissing?: (newDoc: LocalTripleDocumentWithRef) => Promise<void>
-  ): Promise<TripleDocument> {
-    const uri = await this.followOrLink(s, p, defaultLocation);
-    return this.getDocumentAt(uri, initDocIfMissing);
-  }
-  async getContainerOn(
-    s: TripleSubject,
-    p: string,
-    defaultLocation: string,
+    defaultLocation?: string,
     initDocIfMissing?: (newDoc: LocalTripleDocumentWithRef) => Promise<void>
   ): Promise<TripleDocument> {
     const uri = await this.followOrLink(s, p, defaultLocation);
@@ -146,7 +149,7 @@ export class PodData {
   async getSubjectOn(
     s: TripleSubject,
     p: string,
-    defaultLocation: string,
+    defaultLocation?: string,
     initDocIfMissing?: (newDoc: LocalTripleDocumentWithRef) => Promise<void>
   ): Promise<TripleSubject> {
     const uri = await this.followOrLink(s, p, defaultLocation);
@@ -173,6 +176,66 @@ export class PodData {
       }
     );
     return profileDoc.getSubject(this.sessionWebId);
+  }
+
+  async getGlobalInboxDocs(): Promise<TripleDocument[]> {
+    const ourProfileSub = await this.getProfileSub();
+    const ourGlobalInbox = await this.getDocumentOn(
+      ourProfileSub,
+      ldp.inbox,
+      "/inbox/"
+    );
+    const boxSub = ourGlobalInbox.getSubject("");
+    const docs: string[] = boxSub.getAllRefs(ldp.contains);
+    const promises: Promise<TripleDocument>[] = docs.map(
+      async (msgDocUrl: string): Promise<TripleDocument> => {
+        console.log("fetching msg from our global inbox", msgDocUrl);
+        return this.getDocumentAt(msgDocUrl);
+      }
+    );
+    return Promise.all(promises);
+  }
+
+  async sendMessageTo(
+    box: string,
+    cb: (doc: LocalTripleDocumentForContainer) => Promise<void>
+  ): Promise<TripleDocument> {
+    const doc = createDocumentInContainer(box);
+    await cb(doc);
+    return doc.save();
+  }
+
+  async sendFriendRequest(theirWebId: string, ourInbox: string): Promise<void> {
+    const friendRequestDoc = await this.sendMessageTo(
+      this.podRoot,
+      async (doc: LocalTripleDocumentForContainer) => {
+        const sub = doc.addSubject({
+          identifier: "this"
+        });
+        sub.addRef(rdf.type, "https://www.w3.org/ns/activitystreams#Follow");
+        sub.addRef("http://www.w3.org/ns/solid/terms#p2pInbox", ourInbox);
+      }
+    );
+    this.ensureAcl(friendRequestDoc, { [theirWebId]: [acl.Read] }, {});
+    const theirProfileDoc = await this.getDocumentAt(theirWebId);
+    const theirProfileSub = theirProfileDoc.getSubject(theirWebId);
+    const theirGlobalInbox = await this.getDocumentOn(
+      theirProfileSub,
+      ldp.inbox
+    );
+    return void this.sendMessageTo(
+      theirGlobalInbox.asRef(),
+      async (doc: LocalTripleDocumentForContainer) => {
+        const sub = doc.addSubject({
+          identifier: "this"
+        });
+        sub.addRef(rdf.type, "https://www.w3.org/ns/activitystreams#Follow");
+        sub.addRef(
+          "http://www.w3.org/ns/solid/terms#dataAtSource",
+          friendRequestDoc.asRef()
+        );
+      }
+    );
   }
 
   /**
@@ -213,7 +276,9 @@ export class PodData {
     const theirWebId = contactSub.getRef(contacts.webId);
     const nick = contactSub.getString(contacts.nick);
     const theirProfileDoc = await fetchDocument(theirWebId);
-    const theirInbox = theirProfileDoc.getSubject(theirWebId).getRef(ldp.inbox);
+    const theirGlobalInbox = theirProfileDoc
+      .getSubject(theirWebId)
+      .getRef(ldp.inbox);
 
     const ourInbox = await this.getDocumentOn(
       contactSub,
@@ -225,7 +290,16 @@ export class PodData {
       snap.ourOutbox,
       `${this.podRoot}snap/${encodeURIComponent(nick)}/our-out/`
     );
-    return new SolidContact(ourInbox, ourOutbox, theirInbox, nick, this);
+    const theirInbox = contactSub.getRef(snap.theirInbox);
+
+    return new SolidContact(
+      ourInbox,
+      ourOutbox,
+      theirGlobalInbox,
+      nick,
+      this,
+      theirInbox
+    );
   }
 
   addAuthorization(
@@ -299,8 +373,9 @@ export class PodData {
     contactSub.addRef(contacts.webId, theirWebId);
     contactSub.addString(contacts.nick, nick);
     const theirProfileDoc = await fetchDocument(theirWebId);
-    const theirInbox = theirProfileDoc.getSubject(theirWebId).getRef(ldp.inbox);
-
+    const theirGlobalInbox = theirProfileDoc
+      .getSubject(theirWebId)
+      .getRef(ldp.inbox);
     const ourInbox = await this.getDocumentOn(
       contactSub,
       snap.ourInbox,
@@ -313,9 +388,15 @@ export class PodData {
       `${this.podRoot}snap/${encodeURIComponent(nick)}/our-out/`
     );
     await this.ensureAcl(ourOutbox, {}, {});
-    const docUri = await (addressBookSub.getDocument() as LocalTripleDocumentWithRef).asRef();
-    const doc = await this.getDocumentAt(docUri);
-    await (doc as LocalTripleDocumentWithRef).save();
-    return new SolidContact(ourInbox, ourOutbox, theirInbox, nick, this);
+    await this.savePodDataSubject(addressBookSub);
+    const newContact = new SolidContact(
+      ourInbox,
+      ourOutbox,
+      theirGlobalInbox,
+      nick,
+      this
+    );
+    await this.sendFriendRequest(theirWebId, ourInbox.asRef());
+    return newContact;
   }
 }
