@@ -137,9 +137,11 @@ export class SnapContact {
           sub.addInteger(ns.snap("amount"), msg.amount);
         }
         if (msg.condition) {
+          console.log("addString condition", msg.condition);
           sub.addString(ns.snap("condition"), msg.condition);
         }
         if (msg.preimage) {
+          console.log("addString preimage", msg.preimage);
           sub.addString(ns.snap("preimage"), msg.preimage);
         }
         if (msg.expiresAt) {

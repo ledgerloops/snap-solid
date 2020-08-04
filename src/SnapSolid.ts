@@ -2,6 +2,7 @@ import { PodData } from "./solid-models/PodData";
 import { SolidContact } from "./solid-models/SolidContact";
 import { SnapContact } from "./SnapContact";
 
+console.log("Loaded!");
 export class SnapSolid {
   podData: PodData;
   snapContacts: SnapContact[] | undefined;
@@ -13,6 +14,7 @@ export class SnapSolid {
     this.podData = new PodData(sessionWebId, podRoot);
   }
   async addContact(webId: string, nick: string): Promise<void> {
+    console.log("addContact!", webId, nick);
     const newSolidContact = await this.podData.addContact(webId, nick);
     const snapContact = new SnapContact(newSolidContact);
     await snapContact.loadMessages();

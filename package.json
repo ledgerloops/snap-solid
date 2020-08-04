@@ -16,7 +16,8 @@
     "prettier": "prettier --write \"{src,test,__mocks__}/**/*.ts\"",
     "preversion": "npm test",
     "test": "npm run build && npm run lint && npm run jest",
-    "version": "npm run build"
+    "version": "npm run build",
+    "watch": "babel src -d lib --source-maps --extensions \".ts\" --watch & tsc --watch"
   },
   "repository": {
     "type": "git",
@@ -55,6 +56,7 @@
   "dependencies": {
     "rdf-namespaces": "^1.8.0",
     "snap-checker": "^1.5.2",
+    "solid-auth-client": "^2.5.0",
     "tripledoc": "^4.3.4",
     "uuid": "^7.0.3"
   }

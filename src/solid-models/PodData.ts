@@ -206,16 +206,22 @@ export class PodData {
   }
 
   async sendFriendRequest(theirWebId: string, ourInbox: string): Promise<void> {
+    console.log("creating in podRoot", this.podRoot);
     const friendRequestDoc = await this.sendMessageTo(
       this.podRoot,
       async (doc: LocalTripleDocumentForContainer) => {
         const sub = doc.addSubject({
           identifier: "this"
         });
+        console.log("addRef1");
         sub.addRef(rdf.type, "https://www.w3.org/ns/activitystreams#Follow");
+        console.log("addRef2");
         sub.addRef("http://www.w3.org/ns/solid/terms#p2pInbox", ourInbox);
+        console.log("addRef3");
       }
     );
+    console.log("created in podRoot", friendRequestDoc.asRef());
+    console.log("creating ACL", friendRequestDoc.asRef());
     this.ensureAcl(friendRequestDoc, { [theirWebId]: [acl.Read] }, {});
     const theirProfileDoc = await this.getDocumentAt(theirWebId);
     const theirProfileSub = theirProfileDoc.getSubject(theirWebId);
@@ -371,6 +377,8 @@ export class PodData {
     addressBookSub.addRef(vcard.hasMember, uri);
     const contactSub = await this.getSubjectAt(uri);
     contactSub.addRef(contacts.webId, theirWebId);
+    console.log("addString nick", nick);
+
     contactSub.addString(contacts.nick, nick);
     const theirProfileDoc = await fetchDocument(theirWebId);
     const theirGlobalInbox = theirProfileDoc
@@ -396,7 +404,9 @@ export class PodData {
       nick,
       this
     );
+    console.log("sending friend request", theirWebId, ourInbox.asRef());
     await this.sendFriendRequest(theirWebId, ourInbox.asRef());
+    console.log("sent friend request", theirWebId, ourInbox.asRef());
     return newContact;
   }
 }
