@@ -17,6 +17,7 @@ import {
 } from "rdf-namespaces";
 import { v4 as uuid } from "uuid";
 import { SolidContact } from "./SolidContact";
+import SolidAuthClient from "solid-auth-client";
 
 const acl = Object.assign(
   {
@@ -494,7 +495,7 @@ export class PodData {
         );
         await this.processFriendRequest(theirWebId, theirNick, theirInboxUrl);
         console.log("successfully processed inbox doc, deleting it");
-        // await inboxDoc.delete();
+        await SolidAuthClient.fetch(inboxDoc.asRef(), { method: "DELETE" });
       } else {
         console.log("no", subType);
       }
