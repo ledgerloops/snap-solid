@@ -36,12 +36,10 @@ export const contacts = {
   nick: "https://ledgerloops.com/contacts/#nick"
 };
 
-const snap = {
-  ourInbox: "https://ledgerloops.com/snap/#our-in",
-  ourOutbox: "https://ledgerloops.com/snap/#our-out",
-  theirInbox: "https://ledgerloops.com/snap/#their-in",
-  theirWebId: "https://ledgerloops.com/snap/#their-webid",
-  root: "https://ledgerloops.com/snap/#root"
+const solid = {
+  ourInbox: "http://www.w3.org/ns/solid/terms#our-in",
+  ourOutbox: "http://www.w3.org/ns/solid/terms#our-out",
+  theirInbox: "http://www.w3.org/ns/solid/terms#their-in"
 };
 
 export class PodData {
@@ -201,8 +199,11 @@ export class PodData {
     box: string,
     cb: (doc: LocalTripleDocumentForContainer) => Promise<void>
   ): Promise<TripleDocument> {
+    console.log("creating doc in container", box);
     const doc = createDocumentInContainer(box);
+    console.log("executing callback", doc);
     await cb(doc);
+    console.log("Saving doc");
     return doc.save();
   }
 
@@ -288,15 +289,15 @@ export class PodData {
 
     const ourInbox = await this.getDocumentOn(
       contactSub,
-      snap.ourInbox,
+      solid.ourInbox,
       `${this.podRoot}snap/${encodeURIComponent(nick)}/our-in/`
     );
     const ourOutbox = await this.getDocumentOn(
       contactSub,
-      snap.ourOutbox,
+      solid.ourOutbox,
       `${this.podRoot}snap/${encodeURIComponent(nick)}/our-out/`
     );
-    const theirInbox = contactSub.getRef(snap.theirInbox);
+    const theirInbox = contactSub.getRef(solid.theirInbox);
 
     return new SolidContact(
       theirWebId,
@@ -311,9 +312,10 @@ export class PodData {
 
   async findContact(webId: string): Promise<TripleSubject | undefined> {
     const contactSubs = await this.getContactSubs();
-    const found = contactSubs.filter(
-      (contactSub: TripleSubject) => contactSub.getRef(snap.theirWebId) == webId
-    );
+    const found = contactSubs.filter((contactSub: TripleSubject) => {
+      console.log("comparing", contactSub.getRef(contacts.webId), webId);
+      return contactSub.getRef(contacts.webId) == webId;
+    });
     if (found.length >= 1) {
       return found[0];
     }
@@ -399,13 +401,13 @@ export class PodData {
       .getRef(ldp.inbox);
     const ourInbox = await this.getDocumentOn(
       contactSub,
-      snap.ourInbox,
+      solid.ourInbox,
       `${this.podRoot}snap/${encodeURIComponent(nick)}/our-in/`
     );
     await this.ensureAcl(ourInbox, { [theirWebId]: [acl.Append] }, {});
     const ourOutbox = await this.getDocumentOn(
       contactSub,
-      snap.ourOutbox,
+      solid.ourOutbox,
       `${this.podRoot}snap/${encodeURIComponent(nick)}/our-out/`
     );
     await this.ensureAcl(ourOutbox, {}, {});
@@ -430,8 +432,15 @@ export class PodData {
     console.log("processFriendRequest", theirWebId, theirNick, theirInboxUrl);
     const existingContactSub = await this.findContact(theirWebId);
     if (existingContactSub) {
-      existingContactSub.addRef(snap.theirInbox, theirInboxUrl);
-      await (existingContactSub.getDocument() as TripleDocument).save();
+      if (existingContactSub.getRef(solid.theirInbox) !== theirInboxUrl) {
+        console.log(
+          "updating their inbox url",
+          existingContactSub.getRef(solid.theirInbox),
+          theirInboxUrl
+        );
+        existingContactSub.addRef(solid.theirInbox, theirInboxUrl);
+        await (existingContactSub.getDocument() as TripleDocument).save();
+      }
     } else {
       const newContact = await this.addContact(
         theirWebId,
@@ -483,7 +492,9 @@ export class PodData {
         const theirInboxUrl = subAtSource.getRef(
           "http://www.w3.org/ns/solid/terms#p2pInbox"
         );
-        this.processFriendRequest(theirWebId, theirNick, theirInboxUrl);
+        await this.processFriendRequest(theirWebId, theirNick, theirInboxUrl);
+        console.log("successfully processed inbox doc, deleting it");
+        // await inboxDoc.delete();
       } else {
         console.log("no", subType);
       }

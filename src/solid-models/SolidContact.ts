@@ -37,6 +37,16 @@ export class SolidContact {
   async sendMessage(
     cb: (doc: LocalTripleDocumentForContainer) => Promise<void>
   ): Promise<void> {
+    if (!this.theirInbox) {
+      console.log(
+        "resending friend request",
+        this.theirWebId,
+        this.ourInbox.asRef()
+      );
+      this.podData.sendFriendRequest(this.theirWebId, this.ourInbox.asRef());
+      throw new Error("Friend request still pending");
+    }
+    console.log("sending twice");
     this.podData.sendMessageTo(this.ourOutbox.asRef(), cb);
     this.podData.sendMessageTo(this.theirInbox, cb);
   }
