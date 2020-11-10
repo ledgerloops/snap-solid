@@ -99,6 +99,7 @@ export async function snapMessageToWeb(
   box: string
 ): Promise<void> {
   checkStateTransitionIsValid(msg);
+  // FIXME: code for adding triples to the doc seems to be missing here?
   const doc = createDocumentInContainer(box);
   return void doc.save();
 }
